@@ -1,0 +1,13 @@
+#!/bin/bash
+if [[ -z "$VENV" ]]
+then
+    export CHEZSCHEMELIBDIRS="$PWD/src"
+    unset CHEZSCHEMELIBEXTS
+    export AREW_GIT_ROOT="$PWD"
+    export AREW_PATH="$PWD/src/"
+    export PATH="$PWD/local/bin/:$PATH"
+    export VENV=1
+    exec "${@:-$SHELL}"
+else
+    echo "You are already in a virtual environment!"
+fi

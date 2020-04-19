@@ -1,0 +1,58 @@
+TOP = /home/amirouche/src/c/sqlite
+
+# C Compiler and options for use in building executables that
+# will run on the platform that is doing the build.
+#
+BCC = gcc  -g -O2
+
+# TCC is the C Compile and options for use in building executables that
+# will run on the target platform.  (BCC and TCC are usually the
+# same unless your are cross-compiling.)  Separate CC and CFLAGS macros
+# are provide so that these aspects of the build process can be changed
+# on the "make" command-line.  Ex:  "make CC=clang CFLAGS=-fsanitize=undefined"
+#
+CC = gcc
+CFLAGS =   -g -O2 -DSQLITE_OS_UNIX=1
+TCC = ${CC} ${CFLAGS} -I. -I${TOP}/src -I${TOP}/ext/rtree -I${TOP}/ext/icu
+TCC += -I${TOP}/ext/fts3 -I${TOP}/ext/async -I${TOP}/ext/session
+TCC += -I${TOP}/ext/userauth
+
+# Define this for the autoconf-based build, so that the code knows it can
+# include the generated config.h
+#
+TCC += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
+
+# Define -DNDEBUG to compile without debugging (i.e., for production usage)
+# Omitting the define will cause extra debugging code to be inserted and
+# includes extra comments when "EXPLAIN stmt" is used.
+#
+TCC += -DNDEBUG
+
+# Compiler options needed for programs that use the TCL library.
+#
+TCC += -I/usr/include/tcl8.6
+
+# The library that programs using TCL must link against.
+#
+LIBTCL = -L/usr/lib/x86_64-linux-gnu -ltcl8.6
+
+# Compiler options needed for programs that use the readline() library.
+#
+READLINE_FLAGS = -DHAVE_READLINE=1 -I/usr/include/readline
+READLINE_FLAGS += -DHAVE_EDITLINE=0
+
+# The library that programs using readline() must link against.
+#
+LIBREADLINE = -lreadline -lncurses
+
+# Should the database engine be compiled threadsafe
+#
+TCC += -DSQLITE_THREADSAFE=1
+
+
+include main.mk
+
+LSMDIR=$(TOP)/ext/lsm1/
+LSMOPTS=-fPIC
+
+include $(LSMDIR)/Makefile

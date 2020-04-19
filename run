@@ -1,0 +1,3 @@
+#!/bin/sh
+
+./venv rlwrap scheme --debug-on-exception --optimize-level 0 --eedisable $@
