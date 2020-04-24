@@ -1,5 +1,6 @@
 (import (only (chezscheme)
               annotation?
+              expand
               pretty-print
               import
               copy-environment
@@ -31,10 +32,10 @@
     (let ((key (car pair))
           (value (cdr pair)))
       (cons key (delete key value equal?))))
-  
+
   (define (remove-self-dependencies alist)
     (map remove-self-dependency alist))
-  
+
   (define (add-missing-items dependencies)
     (let loop ((items (delete-duplicates (append-map cdr dependencies) equal?))
                (out dependencies))
@@ -44,7 +45,7 @@
             (if (assoc item out)
                 (loop (cdr items) out)
                 (loop (cdr items) (cons (cons item '()) out)))))))
-  
+
   (define (lift dependencies batch)
     (let loop ((dependencies dependencies)
                (out '()))
@@ -58,7 +59,7 @@
                       (cons (cons key (lset-difference equal? value batch))
                             out)))))))
 
-  
+
   (let* ((dependencies (remove-self-dependencies dependencies))
          (dependencies (add-missing-items dependencies)))
     (let loop ((out '())
@@ -104,7 +105,7 @@
 
   (define (and=> v proc)
     (if v (proc v) #f))
-  
+
   (define unique-var
     (let ((count 0))
       (lambda (name)
@@ -183,8 +184,8 @@
               (case (annotation-expression (car head))
                 ((export) (loop (cdr body) (append (cdr head) exports) imports))
                 ((import) (loop (cdr body) exports (append (cdr head) imports)))
-                (else (values (reverse exports) (reverse imports) body))))))))      
-  
+                (else (values (reverse exports) (reverse imports) body))))))))
+
   (define (import->name spec)
     (let ((spec (annotations->datum spec)))
       (case (car spec)
@@ -217,7 +218,7 @@
                    (export ,@exports)
                    (import ,@(map import-rename imports))
                    ,@body))))
-  
+
   (call-with-values (lambda () (read-program filename))
     (lambda (imports body)
       (when (null? imports)
@@ -241,8 +242,13 @@
   (let ((env (copy-environment (environment '(prefix (arew r7rs) $)))))
     (eval (pack filename) env)))
 
+(define (expand* filename)
+  (let ((env (copy-environment (environment '(prefix (arew r7rs) $)))))
+    (pretty-print (expand (pack filename) env))))
+
 
 (match (cdr (command-line))
-  (("print" filename) (print filename))
   (("eval" filename) (eval* filename))
+  (("expand" filename) (expand* filename))
+  (("print" filename) (print filename))
   (else (display "unknown subcommand.\n")))
