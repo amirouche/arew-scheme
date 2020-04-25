@@ -1,4 +1,6 @@
 (import (only (chezscheme)
+              compile-profile
+              profile-dump-html
               expand
               annotation?
               pretty-print
@@ -77,7 +79,6 @@
      [(null? str*) ""]
      [(null? (cdr str*)) (car str*)]
      [else (string-append (car str*) jstr (string-join (cdr str*) jstr))])))
-
 
 
 (define %arew-path
@@ -246,9 +247,81 @@
   (let ((env (copy-environment (environment '(prefix (arew r7rs) $)))))
     (pretty-print (expand (pack filename) env))))
 
+(define (test filename)
+
+  (define (read-filename filename)
+    (define port (open-file-input-port filename))
+    (define sfd (make-source-file-descriptor filename port))
+    (define source (open-source-file sfd))
+    (let loop ((out '()))
+      (call-with-values (lambda () (get-datum/annotations source sfd 0))
+        (lambda (object _)
+          (if (eof-object? object)
+              (reverse out)
+              (loop (cons object out)))))))
+
+  (define (library-filepath name)
+    (let ((name* (string-join (map symbol->string name) "/")))
+      (let loop ((extensions %arew-library-extensions))
+        (if (null? extensions)
+            (error "Library not found" name)
+            (guard (ex (else (loop (cdr extensions))))
+              (find-file (string-append name* (car extensions))))))))
+
+  (define (read-library name)
+    (let ((sexp (car (read-filename (library-filepath name)))))
+      (let loop ((body (cddr (annotation-expression sexp)))
+                 (exports '())
+                 (imports '()))
+        (if (null? body)
+            (values (reverse exports) (reverse imports) '())
+            (let ((head (annotation-expression (car body))))
+              (case (annotation-expression (car head))
+                ((export) (loop (cdr body) (append (cdr head) exports) imports))
+                ((import) (loop (cdr body) exports (append (cdr head) imports)))
+                (else (values (reverse exports) (reverse imports) body))))))))
+
+  (define (make-program library test)
+    `((import ,library) (,test)))
+
+  (define (run-one library test)
+    ;; Create temporary program
+    (when (file-exists? "test.scm")
+      (delete-file "test.scm"))
+    (let ((program (make-program library test)))
+      (call-with-output-file "test.scm"
+        (lambda (port) (for-each (lambda (sexp) (write sexp port)) program))))
+    ;; execute the program
+    (eval* "test.scm"))
+
+  (define (format-output library out tests)
+    (let ((error? #f))
+      (let ((out (map cons out tests)))
+        (let loop ((out out))
+          (unless (null? out)
+            (unless (caaar out)
+              (display library)
+              (display " ")
+              (display (cdar out))
+              (display ": failed")
+              (newline)
+              (set! error? #t)))))))
+
+  (let* ((name (cadr (annotations->datum (car (read-filename filename))))))
+    (call-with-values (lambda () (read-library name))
+      (lambda (exports _0 _1)
+        (let ((exports (annotations->datum exports)))
+          (parameterize ([compile-profile 'source])
+            (let ((error? (format-output exports
+                                         (map-in-order (lambda (test) (run-one name test))
+                                                       exports)
+                                         exports)))
+              (profile-dump-html "profile/")
+              (exit (if error? 1 0)))))))))
 
 (match (cdr (command-line))
   (("eval" filename) (eval* filename))
   (("expand" filename) (expand* filename))
   (("print" filename) (print filename))
+  (("test" filename) (test filename))
   (else (display "unknown subcommand.\n")))
