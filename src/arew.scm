@@ -1,4 +1,6 @@
 (import (only (chezscheme)
+              file-directory?
+              directory-list
               compile-profile
               profile-dump-html
               expand
@@ -102,7 +104,12 @@
    ((annotation? obj) (annotations->datum (annotation-expression obj)))
    (else obj)))
 
-(define (pack filename)
+(define (pack filename-or-obj)
+
+  (define (maybe-annotation-expression obj)
+    (if (annotation? obj)
+        (annotation-expression obj)
+        obj))
 
   (define (and=> v proc)
     (if v (proc v) #f))
@@ -132,11 +139,11 @@
          (else (list (unique-var 'library)))))))
 
   (define (import-rename spec)
-    (let ((spec (annotation-expression spec)))
-      (case (annotation-expression (car spec))
+    (let ((spec (maybe-annotation-expression spec)))
+      (case (maybe-annotation-expression (car spec))
         ((prefix rename for except only)
          (cons* (car spec) (import-rename (cadr spec)) (cddr spec)))
-        (else (rename (map annotation-expression spec))))))
+        (else (rename (map maybe-annotation-expression spec))))))
 
   (define (read-filename filename)
     (define port (open-file-input-port filename))
@@ -162,27 +169,27 @@
       ((chezscheme rnrs) #t)
       (else #f)))
 
-  (define (read-program filename)
+  (define (read-program sexp)
     (let loop ((imports '())
-               (sexp (read-filename filename)))
+               (sexp sexp))
       (if (null? sexp)
           (values '() imports)
           (let ((head (car sexp)))
-            (if (and (pair? (annotation-expression head))
-                     (eq? (annotation-expression (car (annotation-expression head)))
+            (if (and (pair? (maybe-annotation-expression head))
+                     (eq? (maybe-annotation-expression (car (maybe-annotation-expression head)))
                           'import))
-                (loop (append (cdr (annotation-expression head)) imports) (cdr sexp))
+                (loop (append (cdr (maybe-annotation-expression head)) imports) (cdr sexp))
                 (values (reverse imports) sexp))))))
 
   (define (read-library name)
     (let ((sexp (car (read-filename (library-filepath name)))))
-      (let loop ((body (cddr (annotation-expression sexp)))
+      (let loop ((body (cddr (maybe-annotation-expression sexp)))
                  (exports '())
                  (imports '()))
         (if (null? body)
             (values (reverse exports) (reverse imports) '())
-            (let ((head (annotation-expression (car body))))
-              (case (annotation-expression (car head))
+            (let ((head (maybe-annotation-expression (car body))))
+              (case (maybe-annotation-expression (car head))
                 ((export) (loop (cdr body) (append (cdr head) exports) imports))
                 ((import) (loop (cdr body) exports (append (cdr head) imports)))
                 (else (values (reverse exports) (reverse imports) body))))))))
@@ -220,12 +227,17 @@
                    (import ,@(map import-rename imports))
                    ,@body))))
 
-  (call-with-values (lambda () (read-program filename))
+  (define (maybe-read-program filename-or-obj)
+    (if (string? filename-or-obj)
+        (read-program (read-filename filename-or-obj))
+        (read-program filename-or-obj)))
+
+  (call-with-values (lambda () (maybe-read-program filename-or-obj))
     (lambda (imports body)
       (when (null? imports)
-        (error "No imports" filename))
+        (error "No imports" filename-or-obj))
       (when (null? body)
-        (error "No expression" filename))
+        (error "No expression" filename-or-obj))
 
       (let* ((imports* (map import->name imports))
              (dependencies (make-dependencies imports*))
@@ -239,15 +251,15 @@
 (define (print filename)
   (pretty-print (annotations->datum (pack filename))))
 
-(define (eval* filename)
+(define (eval* obj)
   (let ((env (copy-environment (environment '(prefix (arew r7rs) $)))))
-    (eval (pack filename) env)))
+    (eval (pack obj) env)))
 
 (define (expand* filename)
   (let ((env (copy-environment (environment '(prefix (arew r7rs) $)))))
     (pretty-print (expand (pack filename) env))))
 
-(define (test filename)
+(define (test-one filename)
 
   (define (read-filename filename)
     (define port (open-file-input-port filename))
@@ -279,20 +291,17 @@
               (case (annotation-expression (car head))
                 ((export) (loop (cdr body) (append (cdr head) exports) imports))
                 ((import) (loop (cdr body) exports (append (cdr head) imports)))
-                (else (values (reverse exports) (reverse imports) body))))))))
+                (else (values exports imports body))))))))
 
   (define (make-program library test)
     `((import ,library) (,test)))
 
   (define (run-one library test)
-    ;; Create temporary program
-    (when (file-exists? "test.scm")
-      (delete-file "test.scm"))
-    (let ((program (make-program library test)))
-      (call-with-output-file "test.scm"
-        (lambda (port) (for-each (lambda (sexp) (write sexp port)) program))))
+    (display "** ")
+    (display test)
+    (newline)
     ;; execute the program
-    (eval* "test.scm"))
+    (eval* (make-program library test)))
 
   (define (format-output library out tests)
     (let ((error? #f))
@@ -305,7 +314,12 @@
               (display (cdar out))
               (display ": failed")
               (newline)
-              (set! error? #t)))))))
+              (set! error? #t)))))
+      error?))
+
+  (display "* Testing: ")
+  (display filename)
+  (newline)
 
   (let* ((name (cadr (annotations->datum (car (read-filename filename))))))
     (call-with-values (lambda () (read-library name))
@@ -317,7 +331,37 @@
                                                        exports)
                                          exports)))
               (profile-dump-html "profile/")
-              (exit (if error? 1 0)))))))))
+              (when error?
+                (exit 1)))))))))
+
+
+
+(define (test path)
+
+  (define (test-library? path)
+    (let loop ((path (reverse (string->list path)))
+               (suffix (reverse (string->list "tests.scm"))))
+      (if (null? suffix)
+          (if (null? path)
+              #t
+              (if (char=? (car path) #\/)
+                  #f
+                  #t))
+          (if (char=? (car path) (car suffix))
+              (loop (cdr path) (cdr suffix))
+              #f))))
+
+  (let loop ((paths (list path)))
+    (unless (null? paths)
+      (let ((path (car paths)))
+        (if (file-directory? path)
+            (loop (append (cdr paths) (map (lambda (item) (string-append path "/" item)) (directory-list path))))
+            (begin
+              (when (test-library? path)
+                (test-one path))
+              (loop (cdr paths))))))))
+
+
 
 (match (cdr (command-line))
   (("eval" filename) (eval* filename))

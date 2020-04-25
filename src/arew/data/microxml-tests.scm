@@ -5,7 +5,7 @@
    test-002
    test-003
    )
-  (import (arew scheme base)
+  (import (scheme base)
           (tests)
           (arew data microxml))
 
