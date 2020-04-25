@@ -122,7 +122,7 @@ profile-clean:
 	mkdir -p profile
 
 check: profile-clean ## run tests using the library test runner
-	./venv scheme --program make-check.scm
+	./venv scheme --program src/arew.scm test src/
 
 todo: ## Things that should be done
 	@grep -nR --color=always TODO src/
