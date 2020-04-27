@@ -80,7 +80,7 @@ SOURCES = 					\
 	src/srfi/srfi-167/engine.md	\
 	src/srfi/srfi-167/memory.md	\
 	src/srfi/srfi-173.md		\
-
+	src/arew/data/base/okvslite.md	\
 
 help: ## This help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
@@ -93,7 +93,7 @@ yxml: local/lib
 	cd submodules/yxml && gcc -shared -o libyxml.so yxml.o
 	cp submodules/yxml/libyxml.so local/lib/
 
-sqlite-lsm: local/lib
+okvslite: local/lib
 	cp patches/MakefileLSM submodules/sqlite/
 	cd submodules/sqlite/ && make -f MakefileLSM lsm.so
 	cp submodules/sqlite/lsm.so local/lib
@@ -103,7 +103,7 @@ termbox: local/lib
 	cd submodules/termbox-truecolor/ && ./waf
 	cp submodules/termbox-truecolor/build/src/libtermbox.so local/lib/
 
-init: sqlite-lsm yxml termbox
+init: okvslite yxml termbox
 
 doc:
 	cat $(SOURCES) > arew-scheme.md
