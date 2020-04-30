@@ -1,0 +1,25 @@
+(library (arew editor)
+  (export editor)
+  (import (scheme base)
+          (arew termbox)
+          (scheme process-context))
+
+  (begin
+
+    (define (print column line string)
+      (let ((chars (map char->integer (string->list string)))
+            (max (tb-width)))
+        (let loop ((index column)
+                   (chars chars))
+          (unless (or (null? chars) (eq? index max))
+            (tb-change-cell index line (car chars) TB-WHITE TB-DEFAULT)
+            (loop (+ 1 index) (cdr chars))))))
+
+    (define (editor filename)
+      (tb-init)
+      (tb-set-cursor 0 0)
+      (print 0 0 "hello world")
+      (tb-present)
+      (let ((key (tb-poll-event)))
+        (tb-shutdown)
+        (exit)))))

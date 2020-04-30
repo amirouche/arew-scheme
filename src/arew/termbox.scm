@@ -10,8 +10,7 @@
    tb-set-cursor
    tb-poll-event
    tb-select-output-mode
-
-   event-resize?
+   tb-event-type
 
    TB-KEY-F1
    TB-KEY-F2
@@ -125,11 +124,18 @@
    )
   (import
    (except (chezscheme) define-record-type)
-   (arew srfi srfi-9))
+   (only (scheme base) define-record-type))
 
   ;; TODO: extract foreign-procedure* outside lambda or define
 
   (begin
+
+    (define-syntax define-syntax-rule
+      (syntax-rules ()
+        ((define-syntax-rule (keyword args ...) body)
+         (define-syntax keyword
+           (syntax-rules ()
+             ((keyword args ...) body))))))
 
     (define libtermbox (load-shared-object "./local/lib/libtermbox.so"))
 
@@ -243,8 +249,101 @@
     (define TB-EFAILED-TO-OPEN-TTY -2)
     (define TB-EPIPE-TRAP-ERROR -3)
 
+  (define-syntax switch
+    (syntax-rules ()
+      [(switch key (value out) ... (else expr))
+       (cond
+        ((= key value) out)
+        ...
+        (else expr))]))
+
+  (define-record-type <key>
+    (make-key control alternative key)
+    key?
+    (control key-control)
+    (alternative key-alternative)
+    (key key-key))
+
+  (define (char-event->key mode key)
+    (let ((alternative (= mode TB-MOD-ALT)))
+      (switch key
+        (TB-KEY-F1 (make-key #f alternative 'F1))
+        (TB-KEY-F2 (make-key #f alternative 'F2))
+        (TB-KEY-F3 (make-key #f alternative 'F3))
+        (TB-KEY-F4 (make-key #f alternative 'F4))
+        (TB-KEY-F5 (make-key #f alternative 'F5))
+        (TB-KEY-F6 (make-key #f alternative 'F6))
+        (TB-KEY-F7 (make-key #f alternative 'F7))
+        (TB-KEY-F8 (make-key #f alternative 'F8))
+        (TB-KEY-F9 (make-key #f alternative 'F9))
+        (TB-KEY-F10 (make-key #f alternative 'F10))
+        (TB-KEY-F11 (make-key #f alternative 'F11))
+        (TB-KEY-F12 (make-key #f alternative 'F12))
+        (TB-KEY-INSERT (make-key #f alternative 'insert))
+        (TB-KEY-DELETE (make-key #f alternative 'delete))
+        (TB-KEY-HOME (make-key #f alternative 'home))
+        (TB-KEY-END (make-key #f alternative 'end))
+        (TB-KEY-PGUP (make-key #f alternative 'page-up))
+        (TB-KEY-PGDN (make-key #f alternative 'page-down))
+        (TB-KEY-ARROW-UP (make-key #f alternative 'arrow-up))
+        (TB-KEY-ARROW-DOWN (make-key #f alternative 'arrow-down))
+        (TB-KEY-ARROW-LEFT (make-key #f alternative 'arrow-left))
+        (TB-KEY-ARROW-RIGHT (make-key #f alternative 'arrow-right))
+        (TB-KEY-CTRL-TILDE (make-key #t alternative #\~))
+        (TB-KEY-CTRL-2 (make-key #t alternative #\2))
+        (TB-KEY-CTRL-A (make-key #t alternative #\a))
+        (TB-KEY-CTRL-B (make-key #t alternative #\b))
+        (TB-KEY-CTRL-C (make-key #t alternative #\c))
+        (TB-KEY-CTRL-D (make-key #t alternative #\d))
+        (TB-KEY-CTRL-E (make-key #t alternative #\e))
+        (TB-KEY-CTRL-F (make-key #t alternative #\f))
+        (TB-KEY-CTRL-G (make-key #t alternative #\g))
+        (TB-KEY-BACKSPACE (make-key #t alternative 'backspace))
+        (TB-KEY-CTRL-H (make-key #t alternative #\h))
+        (TB-KEY-TAB (make-key #t alternative 'tab))
+        (TB-KEY-CTRL-I (make-key #t alternative #\i))
+        (TB-KEY-CTRL-J (make-key #t alternative #\j))
+        (TB-KEY-CTRL-K (make-key #t alternative #\k))
+        (TB-KEY-CTRL-L (make-key #t alternative #\l))
+        (TB-KEY-ENTER (make-key #f alternative 'enter))
+        (TB-KEY-CTRL-M (make-key #t alternative #\m))
+        (TB-KEY-CTRL-N (make-key #t alternative #\n))
+        (TB-KEY-CTRL-O (make-key #t alternative #\o))
+        (TB-KEY-CTRL-P (make-key #t alternative #\p))
+        (TB-KEY-CTRL-Q (make-key #t alternative #\q))
+        (TB-KEY-CTRL-R (make-key #t alternative #\r))
+        (TB-KEY-CTRL-S (make-key #t alternative #\s))
+        (TB-KEY-CTRL-T (make-key #t alternative #\t))
+        (TB-KEY-CTRL-U (make-key #t alternative #\u))
+        (TB-KEY-CTRL-V (make-key #t alternative #\v))
+        (TB-KEY-CTRL-W (make-key #t alternative #\w))
+        (TB-KEY-CTRL-X (make-key #t alternative #\x))
+        (TB-KEY-CTRL-Y (make-key #t alternative #\y))
+        (TB-KEY-CTRL-Z (make-key #t alternative #\z))
+        (TB-KEY-ESC (make-key #t alternative 'escape))
+        ;; not sure what it is and clash with TB-KEY-ESC
+        ;; (TB-KEY-CTRL-LSQ-BRACKET (make-key #t alternative 'F1))
+        ;; clash with TB-KEY-CTRL-ESC
+        ;; (TB-KEY-CTRL-3 (make-key #t alternative '3))
+        (TB-KEY-CTRL-4 (make-key #t alternative #\4))
+        ;; clash with TB-KEY-CTRL-BACKSLASH
+        ;; (TB-KEY-CTRL-BACKSLASH (make-key #t alternative 'F1))
+        (TB-KEY-CTRL-5 (make-key #t alternative #\5))
+        ;; not sure what it is and clash with TB-KEY-CTRL-5
+        ;; (TB-KEY-CTRL-RSQ-BRACKET (make-key #t alternative 'F1))
+        (TB-KEY-CTRL-6 (make-key #t alternative #\6))
+        (TB-KEY-CTRL-7 (make-key #t alternative #\7))
+        ;; not sure what it is and class with TB-KEY-CTRL-7
+        ;; (TB-KEY-CTRL-SLASH (make-key #t alternative 'F1))
+        ;; (TB-KEY-CTRL-UNDERSCORE (make-key #t alternative 'F1))
+        (TB-KEY-SPACE (make-key #f alternative #\space))
+        ;; not sure what it is but defined in termbox
+        (TB-KEY-BACKSPACE2 (make-key #t alternative 'backspace2))
+        ;; clash with TB-KEY-BACKSPACE2
+        ;; (TB-KEY-CTRL-8 (make-key #t alternative #\8))
+        (else #f))))
+
     (define (tb-init)
-      (init-termbox-library)
       ((foreign-procedure* int "tb_init")))
 
     (define (tb-shutdown)
@@ -307,7 +406,7 @@
     (define-record-type <event>
       (%make-event type a b c d)
       event?
-      (type event-type)
+      (type tb-event-type)
       (a event-a)
       (b event-b)
       (c event-c)
@@ -330,20 +429,33 @@
     (define (make-event type event)
       (case type
         ((-1) (error 'termbox "event error"))
+        ;; TODO: what is this?
         ((0) #f)
+        ;; char event
         ((1) (if (= (ftype-ref tb-event (ch) event) 0)
-                 (%make-event 'key
-                              (ftype-ref tb-event (mod) event)
-                              (ftype-ref tb-event (key) event))
-                 (%make-event 'char (ftype-ref tb-event (ch) event))))
+                 (let* ((mode (ftype-ref tb-event (mod) event))
+                        (key (char-event->key (ftype-ref tb-event (key) event))))
+                   (if (not key)
+                       #f
+                       (%make-event 'key
+                                    key
+                                    #f
+                                    #f
+                                    #f)))
+                 (%make-event 'char (ftype-ref tb-event (ch) event) #f #f #f)))
+        ;; resize event
         ((2) (%make-event 'resize
                           (ftype-ref tb-event (w) event)
-                          (ftype-ref tb-event (h) event)))
+                          (ftype-ref tb-event (h) event)
+                          #f
+                          #f))
+        ;; mouse event
         ((3) (%make-event 'mouse
                           (ftype-ref tb-event (mod) event)
                           (ftype-ref tb-event (key) event)
                           (ftype-ref tb-event (x) event)
-                          (ftype-ref tb-event (y) event)))))
+                          (ftype-ref tb-event (y) event)))
+        (else (error 'termbox "Termbox oops!" type))))
 
     (define (make-tb-event)
       (make-ftype-pointer tb-event (foreign-alloc (ftype-sizeof tb-event))))

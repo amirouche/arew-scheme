@@ -17,6 +17,7 @@
               annotation-expression
               source-directories
               with-source-path))
+
 (import (scheme base))
 (import (scheme list))
 (import (scheme file))
@@ -27,6 +28,7 @@
 (import (scheme comparator))
 (import (srfi srfi-145))
 (import (arew matchable))
+(import (arew editor))
 
 ;; helpers
 
@@ -364,6 +366,7 @@
 
 
 (match (cdr (command-line))
+  (("editor" filename) (editor filename))
   (("eval" filename) (eval* filename))
   (("expand" filename) (expand* filename))
   (("print" filename) (print filename))

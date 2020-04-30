@@ -1,3 +1,6 @@
 [submodule "submodules/sqlite"]
 	path = submodules/sqlite
 	url = https://github.com/sqlite/sqlite
+[submodule "submodules/termbox"]
+	path = submodules/termbox
+	url = https://github.com/nsf/termbox

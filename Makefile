@@ -99,9 +99,9 @@ okvslite: local/lib
 	cp submodules/sqlite/lsm.so local/lib
 
 termbox: local/lib
-	cd submodules/termbox-truecolor/ && ./waf configure
-	cd submodules/termbox-truecolor/ && ./waf
-	cp submodules/termbox-truecolor/build/src/libtermbox.so local/lib/
+	cd submodules/termbox/ && ./waf configure
+	cd submodules/termbox/ && ./waf
+	cp submodules/termbox/build/src/libtermbox.so local/lib/
 
 init: okvslite yxml termbox
 
