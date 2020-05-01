@@ -28,7 +28,7 @@
 (import (scheme comparator))
 (import (srfi srfi-145))
 (import (arew matchable))
-(import (arew editor))
+;; (import (arew editor))
 
 ;; helpers
 
@@ -366,7 +366,7 @@
 
 
 (match (cdr (command-line))
-  (("editor" filename) (editor filename))
+;;  (("editor" filename) (editor filename))
   (("eval" filename) (eval* filename))
   (("expand" filename) (expand* filename))
   (("print" filename) (print filename))
