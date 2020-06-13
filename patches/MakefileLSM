@@ -1,4 +1,4 @@
-TOP = /home/amirouche/src/c/sqlite
+TOP = $(PWD)
 
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.

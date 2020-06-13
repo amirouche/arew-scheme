@@ -1,27 +1,26 @@
 #!chezscheme
-(library (arew data base lsm)
+(library (arew data base okvslite)
 
   (export
-   lsm-begin
-   lsm-config
-   lsm-close
-   lsm-commit
-   lsm-config
-   lsm-cursor-close
-   lsm-cursor-first
-   lsm-cursor-key
-   lsm-cursor-last
-   lsm-cursor-next
-   lsm-cursor-open
-   lsm-cursor-prev
-   lsm-cursor-seek
-   lsm-cursor-valid?
-   lsm-cursor-value
-   lsm-delete
-   lsm-insert
-   lsm-new
-   lsm-open
-   lsm-rollback
+   okvslite-begin
+   okvslite-close
+   okvslite-commit
+   okvslite-config
+   okvslite-cursor-close
+   okvslite-cursor-first
+   okvslite-cursor-key
+   okvslite-cursor-last
+   okvslite-cursor-next
+   okvslite-cursor-open
+   okvslite-cursor-prev
+   okvslite-cursor-seek
+   okvslite-cursor-valid?
+   okvslite-cursor-value
+   okvslite-delete
+   okvslite-insert
+   okvslite-new
+   okvslite-open
+   okvslite-rollback
    )
 
   (import (chezscheme))
@@ -59,7 +58,7 @@
 
     ;; sqlite lsm extension bindings
 
-    (define lsm (load-shared-object "./local/lib/lsm.so"))
+    (define okvslite (load-shared-object "./local/lib/lsm.so"))
 
     (define (error->message code)
       (case code
@@ -79,48 +78,48 @@
     (define-syntax-rule (check code)
       (let ((code* code))
         (unless (zero? code*)
-          (error 'lsm (error->message code*) code*))))
+          (error 'okvslite (error->message code*) code*))))
 
-    (define lsm-new
+    (define okvslite-new
       (let ((proc (foreign-procedure* int "lsm_new" void* void*)))
         (lambda ()
           (let ((out (make-double-pointer)))
             (check (proc 0 out))
             (dereference out)))))
 
-    (define lsm-close
+    (define okvslite-close
       (let ((proc (foreign-procedure* int "lsm_close" void*)))
         (lambda (db)
           (check (proc db)))))
 
-    (define lsm-config
+    (define okvslite-config
       (let ((proc (foreign-procedure* int "lsm_config" void* int void*)))
         (lambda (db config value)
           (let ((pointer (make-double-pointer)))
             (foreign-set! 'int pointer 0 value)
             (check (proc db config pointer))))))
 
-    (define lsm-open
+    (define okvslite-open
       (let ((proc (foreign-procedure "lsm_open" (void* string) int)))
         (lambda (db filename)
           (check (proc db filename)))))
 
-    (define lsm-begin
+    (define okvslite-begin
       (let ((proc (foreign-procedure* int "lsm_begin" void* int)))
         (lambda (db level)
           (check (proc db level)))))
 
-    (define lsm-commit
+    (define okvslite-commit
       (let ((proc (foreign-procedure* int "lsm_commit" void* int)))
         (lambda (db level)
           (check (proc db level)))))
 
-    (define lsm-rollback
+    (define okvslite-rollback
       (let ((proc (foreign-procedure* int "lsm_rollback" void* int)))
         (lambda (db level)
           (check (proc db level)))))
 
-    (define lsm-insert
+    (define okvslite-insert
       (let ((proc (foreign-procedure* int "lsm_insert" void* void* int void* int)))
         (lambda (db key value)
           (call-with-lock key
@@ -133,7 +132,7 @@
                                (bytevector->pointer value)
                                (bytevector-length value))))))))))
 
-    (define lsm-delete
+    (define okvslite-delete
       (let ((proc (foreign-procedure* int "lsm_delete" void* void* int)))
         (lambda (db key)
           (call-with-lock key
@@ -142,14 +141,14 @@
                            (bytevector->pointer key)
                            (bytevector-length key))))))))
 
-    (define lsm-cursor-open
+    (define okvslite-cursor-open
       (let ((proc (foreign-procedure* int "lsm_csr_open" void* void*)))
         (lambda (db)
           (let ((out (make-double-pointer)))
             (check (proc db out))
             (dereference out)))))
 
-    (define lsm-cursor-close
+    (define okvslite-cursor-close
       (let ((proc (foreign-procedure* int "lsm_csr_close" void*)))
         (lambda (cursor)
           (check (proc cursor)))))
@@ -160,44 +159,44 @@
         ((less-than-or-equal) -1)
         ((equal) 0)
         ((greater-than-or-equal) 1)
-        (else (error 'lsm "unknown seek strategy"))))
+        (else (error 'okvslite "unknown seek strategy"))))
 
-    (define lsm-cursor-seek
+    (define okvslite-cursor-seek
       (let ((proc (foreign-procedure* int "lsm_csr_seek" void* void* int int)))
-        (lambda (cursor key seek)
+        (lambda (cursor key strategy)
           (call-with-lock key
             (lambda ()
               (check (proc cursor
                            (bytevector->pointer key)
                            (bytevector-length key)
-                           (->seek seek))))))))
+                           (->seek strategy))))))))
 
-    (define lsm-cursor-first
+    (define okvslite-cursor-first
       (let ((proc (foreign-procedure* int "lsm_csr_first" void*)))
         (lambda (cursor)
           (check (proc cursor)))))
 
-    (define lsm-cursor-last
+    (define okvslite-cursor-last
       (let ((proc (foreign-procedure* int "lsm_csr_last" void*)))
         (lambda (cursor)
           (check (proc cursor)))))
 
-    (define lsm-cursor-next
+    (define okvslite-cursor-next
       (let ((proc (foreign-procedure* int "lsm_csr_next" void*)))
         (lambda (cursor)
           (check (proc cursor)))))
 
-    (define lsm-cursor-prev
+    (define okvslite-cursor-prev
       (let ((proc (foreign-procedure* int "lsm_csr_prev" void*)))
         (lambda (cursor)
           (check (proc cursor)))))
 
-    (define lsm-cursor-valid?
+    (define okvslite-cursor-valid?
       (let ((proc (foreign-procedure* int "lsm_csr_valid" void*)))
         (lambda (cursor)
           (= (proc cursor) 1))))
 
-    (define lsm-cursor-key
+    (define okvslite-cursor-key
       (let ((proc (foreign-procedure* int "lsm_csr_key" void* void* void*)))
         (lambda (cursor)
           (let ((data* (make-double-pointer))
@@ -214,7 +213,7 @@
                     (loop (- index 1)))))
               bytevector)))))
 
-    (define lsm-cursor-value
+    (define okvslite-cursor-value
       (let ((proc (foreign-procedure* int "lsm_csr_value" void* void* void*)))
         (lambda (cursor)
           (let ((data* (make-double-pointer))

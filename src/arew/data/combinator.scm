@@ -22,7 +22,7 @@
 ;;
 ;;; Code:
 ;;
-(library (arew data parser combinator)
+(library (arew data combinator)
   (export
    ;; port->stream
    make-pseudo-xchar

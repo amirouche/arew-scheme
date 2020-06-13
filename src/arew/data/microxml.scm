@@ -1,9 +1,9 @@
 (library (arew data microxml)
   (export microxml->sxml)
   (import
-   (arew scheme base)
+   (scheme base)
    (arew data yxml)
-   (arew srfi srfi-145))
+   (srfi srfi-145))
 
   (define %element-name 0)
   (define %attributes 1)
