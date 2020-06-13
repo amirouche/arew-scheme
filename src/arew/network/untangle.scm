@@ -46,7 +46,7 @@
                           (call/1cc
                            (lambda (k)
                              ;; XXX: The continuation K also called
-                             ;; %prompt may be called in thunk during
+                             ;; %prompt may be called in THUNK during
                              ;; the extent of this lambda.
                              (set! %prompt k)
                              (thunk))))
