@@ -414,6 +414,7 @@
         (canonical-name . ,canonical-name))))
 
   (define (getaddrinfo node service hints)
+    ;; TODO: implement non-blocking domain name resolution (DNS)
     (let ((node (if node node 0))
           (service (if service service 0))
           (hints (if hints (alist->address-info hints) 0))
