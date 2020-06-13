@@ -194,7 +194,7 @@
     (let loop ((list list)
                (out '()))
       (if (null? list)
-          (apply string-append (reverse! (cdr out)))
+          (apply string-append (reverse (cdr out)))
           (loop (cdr list)
                 (cons string (cons (car list) out))))))
 
@@ -253,11 +253,11 @@
       (if (pair? l)
           (let ((c (car l)))
             (if (char=? c char)
-                (cons (reverse! t) (loop '() (cdr l)))
+                (cons (reverse t) (loop '() (cdr l)))
                 (loop (cons (car l) t) (cdr l))))
           (if (null? t)
               '()
-              (list (reverse! t))))))
+              (list (reverse t))))))
 
   (define (string-split s char)
     (map list->string (tokenize (string->list s) char)))
@@ -395,7 +395,7 @@
                    (lst '()))
           (let ((c (foreign-ref 'char 0 (+ p (* i soc)))))
             (if (= c 0)
-                (utf8->string (apply bytevector (reverse! lst)))
+                (utf8->string (apply bytevector (reverse lst)))
                 (loop (+ i 1)
                       (cons c lst)))))))
 
@@ -429,7 +429,7 @@
                 (if (= pointer 0)
                     (begin
                       (freeaddrinfo out)
-                      (values #t (reverse! out*)))
+                      (values #t (reverse out*)))
                     (let ((pointer (make-ftype-pointer %addrinfo pointer)))
                       (loop (cons (addrinfo->alist pointer) out*)
                             (ftype-pointer-address (ftype-ref %addrinfo (next) pointer)))))))))))
