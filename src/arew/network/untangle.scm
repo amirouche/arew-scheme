@@ -39,8 +39,6 @@
     (define %queue '())
     (define %wouldblock (list 'wouldblock))
 
-
-
     (define EWOULDBLOCK 11)
 
     (define (call-with-prompt thunk handler)
