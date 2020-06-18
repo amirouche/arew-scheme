@@ -74,6 +74,7 @@ There is four, possibly five sides to this a project:
 
 The current "sitemap" looks like the following:
 
+```org-mode
 ** Basics
 *** Ask a (natural language) question, prolly get an answer
 *** Learn how to query the knowledge base programmatically
@@ -110,6 +111,7 @@ The current "sitemap" looks like the following:
 *** Change bio
 ** Meta
 *** Natural language query analysis
+```
 
 That list of features will be subject to changes.  Also the community
 part, similar to a microblogging application might be implemented
