@@ -5,7 +5,6 @@
               profile-dump-html
               expand
               annotation?
-              expand
               pretty-print
               import
               copy-environment
@@ -338,8 +337,6 @@
               (when error?
                 (exit 1)))))))))
 
-
-
 (define (test path)
 
   (define (test-library? path)
@@ -364,12 +361,6 @@
               (when (test-library? path)
                 (test-one path))
               (loop (cdr paths))))))))
-
-
-(define (expand* filename)
-  (let ((env (copy-environment (environment '(prefix (arew r7rs) $)))))
-    (pretty-print (expand (pack filename) env))))
-
 
 (match (cdr (command-line))
 ;;  (("editor" filename) (editor filename))
