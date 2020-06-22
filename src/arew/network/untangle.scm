@@ -98,7 +98,7 @@
       ;; the mutex is acquired and released explicitly instead of
       ;; using with-mutex.  It is possible that with-mutex does not
       ;; work in this case, because, in the second branch, the mutex
-      ;; is released in the procedure exec.
+      ;; is released in the procedure exec after abort-to-prompt.
       (mutex-acquire (future-mutex future))
       (if (future-values future)
           (begin
