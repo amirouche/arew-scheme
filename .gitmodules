@@ -7,3 +7,6 @@
 [submodule "submodules/nanopass"]
 	path = submodules/nanopass
 	url = https://github.com/nanopass/nanopass-framework-scheme
+[submodule "submodules/yxml"]
+	path = submodules/yxml
+	url = https://g.blicky.net/yxml.git/
