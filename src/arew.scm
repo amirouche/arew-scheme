@@ -637,7 +637,7 @@ int run_program(int argc, const char **argv, const char *bootfilename, const cha
 (match (cdr (command-line))
 ;;  (("editor" filename) (editor filename))
   (("eval" filename . args) (parameterize ((command-line (relative-command-line)))
-                       (eval* filename)))
+                              (eval* filename)))
   (("check" filename) (check filename))
   (("compile" filename) (compile* filename))
   (else (display "unknown subcommand.\n")))
