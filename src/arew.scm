@@ -489,9 +489,16 @@ int run_program(int argc, const char **argv, const char *bootfilename, const cha
                   temporary-directory
                   temporary-directory)))
 
+(define (relative-command-line)
+  (let loop ((strings (command-line)))
+    (if (string=? (car strings) "eval")
+        (cdr strings)
+        (loop (cdr strings)))))
+
 (match (cdr (command-line))
 ;;  (("editor" filename) (editor filename))
-  (("eval" filename) (eval* filename))
+  (("eval" filename . args) (parameterize ((command-line (relative-command-line)))
+                       (eval* filename)))
   (("check" filename) (check filename))
   (("compile" filename) (compile* filename))
   (else (display "unknown subcommand.\n")))
