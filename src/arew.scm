@@ -248,10 +248,8 @@
      [else (string-append (car str*) jstr (string-join (cdr str*) jstr))])))
 
 
-(define %arew-path
-  (get-environment-variable "AREW_PATH"))
-
-(source-directories (list %arew-path "."))
+(source-directories (list (getenv "CHEZSCHEMELIBDIRS") "."))
+(library-directories (list (cons (getenv "CHEZSCHEMELIBDIRS") (getenv "CHEZSCHEMELIBDIRS"))))
 
 (define find-file
   (lambda (fn)
