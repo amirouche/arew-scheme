@@ -5,7 +5,8 @@
 *.scm~
 *.scm#*
 .#*.scm
-
+*.wpo
+*.so
 
 profile/
 local/
