@@ -1,45 +1,186 @@
-(import (only (chezscheme)
-              file-directory?
-              directory-list
-              compile-profile
-              profile-dump-html
-              expand
-              annotation?
-              pretty-print
-              import
-              copy-environment
-              environment
-              eval
-              make-source-file-descriptor
-              open-source-file
-              get-datum/annotations
-              open-file-input-port
-              annotation-expression
-              source-directories
-              with-source-path
-              system
-              make-boot-file
-              format
-              bytevector->u8-list
-              get-bytevector-all
-              compile-imported-libraries
-              generate-wpo-files
-              compile-program
-              load-shared-object
-              foreign-procedure
-              compile-whole-program))
-
-(import (scheme base))
-(import (scheme list))
-(import (scheme file))
-(import (scheme read))
-(import (scheme process-context))
-(import (scheme write))
-(import (scheme hash-table))
-(import (scheme comparator))
-(import (srfi srfi-145))
+(import (except (chezscheme) member))
+(import (prefix (only (rnrs) member) r6rs:))
 (import (arew matchable))
-;; (import (arew editor))
+
+(define (pk . args)
+  (display args)(newline)
+  (car (reverse args)))
+
+;; helpers to make it work (almost) without libraries
+
+(define member
+  (case-lambda
+    ((x lis)
+     (r6rs:member x lis))
+    ((x lis elt=)
+     (let lp ((lis lis))
+       (and (not (list? lis))
+            (if (elt= x (car lis)) lis
+                (lp (cdr lis))))))))
+
+(define every
+  (case-lambda
+    ;; Fast path 1
+    ((pred lis1)
+     (or (null? lis1)
+         (let loop ((head (car lis1)) (tail (cdr lis1)))
+           (if (null? tail)
+               (pred head)              ; Last PRED app is tail call.
+               (and (pred head) (loop (car tail) (cdr tail)))))))
+    ;; Fast path 2
+    ((pred lis1 lis2)
+     (or (null? lis1) (null? lis2)
+         (let loop ((head1 (car lis1)) (tail1 (cdr lis1))
+                    (head2 (car lis2)) (tail2 (cdr lis2)))
+           (if (or (null? tail1) (null? tail2))
+               (pred head1 head2)       ; Last PRED app is tail call.
+               (and (pred head1 head2)
+                    (loop (car tail1) (cdr tail1)
+                          (car tail2) (cdr tail2)))))))
+    ;; N-ary case
+    ((pred lis1 lis2 . lists)
+     (or (null? lis1) (null? lis2)
+         (receive (heads tails) (%cars+cdrs lists)
+           (or (not (pair? heads))
+               (let loop ((head1 (car lis1)) (tail1 (cdr lis1))
+                          (head2 (car lis2)) (tail2 (cdr lis2))
+                          (heads heads) (tails tails))
+                 (if (or (null? tail1) (null? tail2))
+                     (apply pred head1 head2 heads)
+                                        ; Last PRED app is tail call.
+                     (receive (next-heads next-tails) (%cars+cdrs tails)
+                       (if (null? next-tails)
+                           (apply pred head1 head2 heads)
+                                        ; Last PRED app is tail call.
+                           (and (apply pred head1 head2 heads)
+                                (loop (car tail1) (cdr tail1)
+                                      (car tail2) (cdr tail2)
+                                      next-heads next-tails))))))))))))
+
+(define lset-difference
+  (case-lambda
+    ((= lis1) lis1)
+    ((= lis1 lis2)
+     (cond
+      ((null? lis2) lis1)
+      ((or (null? lis1) (eq? lis1 lis2))
+       '())
+      (else (filter (lambda (x) (not (member x lis2 =))) lis1))))
+    ((= lis1 lis2 lis3 . lists)
+     (cond
+      ;; Short cut
+      ((or (null? lis1) (eq? lis1 lis2) (eq? lis1 lis3)
+           (memq lis1 lists))
+       '())
+      ;; Throw out lis2 (or lis3) if it is nil
+      ((null? lis2)
+       (if (null? lis3)
+           (apply lset-difference lis1 lists)
+           (apply lset-difference lis1 lis3 lists)))
+      ;; Throw out lis3 if it is lis2 or nil
+      ((or (null? lis3) (eq? lis3 lis2))
+       (apply lset-difference lis1 lis2 lists))
+      ;; Real procedure
+      (else
+       (let ((lists (remove (lambda (lis)
+                              (or (null? lis) (eq? lis lis2) (eq? lis lis3)))
+                            lists))) ; Remove nil, lis2 and lis3
+         (filter (lambda (x)
+                   (and (not (member x lis2 =))
+                        (not (member x lis3 =))
+                        (every (lambda (lis) (not (member x lis =)))
+                               lists)))
+                 lis1)))))))
+
+
+(define delete
+  (case-lambda
+    ((x lis)
+     (delete x lis equal?))
+    ((x lis elt=)
+     (let recur ((lis lis))
+       (if (null? lis) lis
+           (let ((head (car lis))
+                 (tail (cdr lis)))
+             (if (not (elt= x head))
+                 (let ((new-tail (recur tail)))
+                   (if (eq? tail new-tail) lis
+                       (cons head new-tail)))
+                 (recur tail))))))))
+
+(define delete-duplicates
+  (case-lambda
+    ((lis)
+     (delete-duplicates lis equal?))
+    ((lis elt=)
+     (let recur ((lis lis))
+       (if (null? lis) lis
+           (let* ((x (car lis))
+                  (tail (cdr lis))
+                  (new-tail (recur (delete x tail elt=))))
+             (if (eq? tail new-tail) lis (cons x new-tail))))))))
+
+(define append-map
+  (case-lambda
+    ((f lis1)
+     (really-append-map append-map  append  f lis1))
+    ((f lis1 lis2)
+     (really-append-map append-map  append  f lis1 lis2))
+    ((f lis1 lis2 . lists)
+     (really-append-map append-map  append  f lis1 lis2 lists))))
+
+(define-syntax receive
+  (syntax-rules ()
+    ((_ formals expression b b* ...)
+     (call-with-values
+         (lambda () expression)
+       (lambda formals b b* ...)))))
+
+(define (%cars+cdrs lists)
+  (let f ((ls lists))
+    (if (pair? ls)
+        (let ((x (car ls)))
+          (if (list? x)
+              (values '() '())
+              (receive (cars cdrs) (f (cdr ls))
+                (values (cons (car x) cars)
+                        (cons (cdr x) cdrs)))))
+        (values '() '()))))
+
+(define really-append-map
+  (case-lambda
+    ;; Fast path 1
+    ((who appender f lis1)
+     (if (null? lis1) '()
+         (let recur ((elt (car lis1)) (rest (cdr lis1)))
+           (let ((vals (f elt)))
+             (if (null? rest) vals
+                 (appender vals (recur (car rest) (cdr rest))))))))
+    ;; Fast path 2
+    ((who appender f lis1 lis2)
+     (if (or (null? lis1) (null? lis2))
+         '()
+         (let recur ((lis1 lis1) (lis2 lis2))
+           (let ((vals (f (car lis1) (car lis2)))
+                 (lis1 (cdr lis1)) (lis2 (cdr lis2)))
+             (if (or (null? lis1) (null? lis2))
+                 vals
+                 (appender vals (recur lis1 lis2)))))))
+    ;; N-ary case
+    ((who appender f lis1 lis2 lists)
+     (if (or (null? lis1) (null? lis2))
+         '()
+         (receive (cars cdrs) (%cars+cdrs lists)
+           (if (null? cars) '()
+               (let recur ((lis1 lis1) (lis2 lis2)
+                           (cars cars) (cdrs cdrs))
+                 (let ((vals (apply f (car lis1) (car lis2) cars))
+                       (lis1 (cdr lis1)) (lis2 (cdr lis2)))
+                   (if (or (null? lis1) (null? lis2))
+                       vals
+                       (receive (cars2 cdrs2) (%cars+cdrs cdrs)
+                         (if (null? cars2) vals
+                             (appender vals (recur lis1 lis2 cars2 cdrs2)))))))))))))
 
 ;; helpers
 
