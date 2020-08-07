@@ -7,8 +7,8 @@
    command-line emergency-exit (rename (r7rs-exit exit)) get-environment-variable
    get-environment-variables)
   (import
-   (rnrs)
-   (only (chezscheme) foreign-procedure)
+   (except (rnrs) command-line)
+   (only (chezscheme) command-line foreign-procedure)
    (srfi srfi-98))
 
   (define (translate-status status)
