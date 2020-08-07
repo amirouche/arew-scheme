@@ -17,7 +17,7 @@
     list->char-set! string->char-set!
     char-set-filter  ucs-range->char-set
     char-set-filter! ucs-range->char-set!
-    (rename (x->char-set ->char-set))
+    #;(rename (x->char-set ->char-set))
     ; Querying character sets
     char-set->list char-set->string
     char-set-size char-set-count char-set-contains?
