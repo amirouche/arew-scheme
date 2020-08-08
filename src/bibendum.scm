@@ -12,7 +12,7 @@
 (import (arew matchable))
 
 (import (only (chezscheme)
-              random random-seed file-exists?
+              random random-seed 
               file-regular? fasl-read fasl-write))
 
 (define (read-lines filename)
@@ -23,9 +23,6 @@
         (if (eof-object? line)
             (reverse out)
             (loop (read-line port) (cons line out)))))))
-
-(define (string-downcase string)
-  (list->string (map char-downcase (string->list string))))
 
 (define (string-replace-punctuation string)
   (define (punctuation->space char)
