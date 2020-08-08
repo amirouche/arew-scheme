@@ -318,7 +318,7 @@
                               (map (lambda (item) (path-join path item))
                                    (directory-list path)))
                       out)
-                (if (string-suffix? path "check.scm")
+                (if (and (string-suffix? path "check.scm") (not (string=? path "src/check.scm")))
                     (loop (cdr paths) (cons path out))
                     (loop (cdr paths) out)))))))
 
