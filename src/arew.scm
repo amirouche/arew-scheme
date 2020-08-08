@@ -1,4 +1,4 @@
-(import (except (chezscheme) member))
+(import (except (chezscheme) member filter))
 (import (prefix (only (rnrs) member) r6rs:))
 (import (arew matchable))
 
@@ -8,13 +8,24 @@
 
 ;; helpers to make it work (almost) without libraries
 
+(define (filter pred lis)                       ; Sleazing with EQ? makes this
+  (let recur ((lis lis))
+    (if (null? lis) lis                    ; Use NOT-PAIR? to handle dotted lists.
+        (let ((head (car lis))
+              (tail (cdr lis)))
+          (if (pred head)
+              (let ((new-tail (recur tail)))    ; Replicate the RECUR call so
+                (if (eq? tail new-tail) lis
+                    (cons head new-tail)))
+              (recur tail))))))                 ; this one can be a tail call.
+
 (define member
   (case-lambda
     ((x lis)
      (r6rs:member x lis))
     ((x lis elt=)
      (let lp ((lis lis))
-       (and (not (list? lis))
+       (and (not (null? lis))
             (if (elt= x (car lis)) lis
                 (lp (cdr lis))))))))
 
@@ -140,7 +151,7 @@
   (let f ((ls lists))
     (if (pair? ls)
         (let ((x (car ls)))
-          (if (list? x)
+          (if (null? x)
               (values '() '())
               (receive (cars cdrs) (f (cdr ls))
                 (values (cons (car x) cars)
