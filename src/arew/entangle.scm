@@ -9,6 +9,7 @@
           entangle-run)
 
   (import (scheme base)
+          (scheme time)
           (scheme hash-table)
           (scheme comparator)
           (srfi srfi-173))
@@ -16,7 +17,7 @@
   (define-record-type <entangle>
     (%make-entangle time epfd max-events on-write on-read idle-hooks tasks)
     entangle?
-    (time entangle-time)
+    (time entangle-time entangle-time!)
     (epfd entangle-epfd)
     (max-events entangle-max-events)
     (on-write %entangle-on-write)
@@ -63,11 +64,11 @@
 
   (define (entangle-on-write-callback entangle fd event)
     ;; TODO: unwatch the fd and then watch when there is read callback
-    ((hash-table-ref (%entangle-on-write entangle) fd) fd event))
+    ((hash-table-ref (%entangle-on-write entangle) fd) entangle fd event))
 
   (define (entangle-on-read-callback entangle fd)
     ;; TODO: same as above for write
-    ((hash-table-ref (%entangle-on-read entangle) fd) fd event))
+    ((hash-table-ref (%entangle-on-read entangle) fd) entnagle fd event))
   
   (define (entangle-run-once entangle)
     (define generator (entangle-wait entangle))
@@ -89,10 +90,16 @@
          (hash-table-empty? (entangle-on-write entangle))
          (hash-table-empty? (entangle-on-write entangle))))
 
+  (define (now)
+    ;; epoll expects time out in milliseconds, let's use milliseconds
+    ;; everywhere.
+    (inexact (* (/ (current-jiffy) (jiffies-per-second)) 1000)))
+  
   (define (entangle-run entangle)
     (let loop ()
       (unless (entangle-finished? entangle)
+        (entangle-time! entangle (now))
         (unless (entangle-run-once entangle)
-          (hook-run (entangle-idle-hooks entangle)))
+          (hook-run (entangle-idle-hooks entangle) entangle))
         (loop)))))
             
