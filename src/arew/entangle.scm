@@ -39,20 +39,16 @@
                     (make-hooks)
                     (make-tasks)))
 
-  (define (entangle-on-write entangle fd thunk)
+  (define (entangle-on-write entangle fd proc)
     (when (hash-table-ref/default (%entangle-on-write entangle) fd #f)
       (error 'entangle "file descriptor is already registred for write" fd))
-    (if (hash-table-ref/default (%entangle-on-read entangle) fd)
-        (epoll-modify! (entangle-epfd) fd 'write)
-        (epoll-add! (entangle-epfd) fd 'write))
-    (hash-table-set! (%entangle-on-write entangle) fd thunk))
+    (epoll-watch! (entangle-epfd) fd 'write)
+    (hash-table-set! (%entangle-on-write entangle) fd proc))
 
-  (define (entangle-on-read entangle fd thunk)
+  (define (entangle-on-read entangle fd proc)
     (when (hash-table-ref/default (%entangle-on-read entangle) fd #f)
       (error 'entangle "file descriptor is already registred for write" fd))
-    (if (hash-table-ref/default (%entangle-on-write entangle) fd)
-        (epoll-modify! (entangle-epfd) fd 'read)
-        (epoll-add! (entangle-epfd) fd 'read))
+    (epoll-watch! (entangle-epfd) fd 'read)
     (hash-table-set! (%entangle-on-read entangle) fd thunk))
 
   (define (entangle-spawn entangle thunk delta)
@@ -65,11 +61,13 @@
                  (entangle-max-events entangle)
                  (tasks-timeout (entangle-tasks entangle))))
 
-  (define (entangle-on-write-callback entangle fd)
-    ((hash-table-ref (%entangle-on-write entangle) fd)))
+  (define (entangle-on-write-callback entangle fd event)
+    ;; TODO: unwatch the fd and then watch when there is read callback
+    ((hash-table-ref (%entangle-on-write entangle) fd) fd event))
 
   (define (entangle-on-read-callback entangle fd)
-    ((hash-table-ref (%entangle-on-read entangle) fd)))
+    ;; TODO: same as above for write
+    ((hash-table-ref (%entangle-on-read entangle) fd) fd event))
   
   (define (entangle-run-once entangle)
     (define generator (entangle-wait entangle))
@@ -82,6 +80,7 @@
             (case write-or-read
               ((write) (entangle-on-write-callback entangle fd))
               ((read) (entangle-on-read-callback entangle fd))
+              ;; TODO: handle 'close and 'error
               (else (error 'entangle "unknown event" write-or-read)))
             (loop #f (generator))))))
 
@@ -90,13 +89,10 @@
          (hash-table-empty? (entangle-on-write entangle))
          (hash-table-empty? (entangle-on-write entangle))))
 
-  (define (entangle-idle-callback entangle)
-    (raise 'not-implemented))
-  
   (define (entangle-run entangle)
     (let loop ()
       (unless (entangle-finished? entangle)
         (unless (entangle-run-once entangle)
-          (entangle-idle-callback entangle))
-        (loop))))
+          (hook-run (entangle-idle-hooks entangle)))
+        (loop)))))
             
