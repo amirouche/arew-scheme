@@ -15,7 +15,7 @@
           (srfi srfi-173))
 
   (define-record-type <entangle>
-    (%make-entangle time epfd max-events on-write on-read idle-hooks tasks)
+    (%make-entangle time epfd max-events on-write on-read idle-hooks todo)
     entangle?
     (time entangle-time entangle-time!)
     (epfd entangle-epfd)
@@ -23,7 +23,7 @@
     (on-write %entangle-on-write)
     (on-read %entangle-on-read)
     (idle-hooks entangle-idle-hooks)
-    (tasks entangle-tasks))
+    (todo entangle-todo))
 
   (define (make-integer-comparator)
     (make-comparator integer? = < number-hash))
@@ -38,7 +38,7 @@
                     (make-hash-table*)
                     (make-hash-table*)
                     (make-hooks)
-                    (make-tasks)))
+                    (make-todo)))
 
   (define (entangle-on-write entangle fd proc)
     (when (hash-table-ref/default (%entangle-on-write entangle) fd #f)
@@ -53,14 +53,17 @@
     (hash-table-set! (%entangle-on-read entangle) fd thunk))
 
   (define (entangle-spawn entangle thunk delta)
-    (tasks-add (entangle-tasks entangle)
+    (todo-add! (entangle-todo entangle)
                (fx+ (entangle-time entangle) delta)
                thunk))
 
   (define (entangle-wait entangle)
-    (epoll-wait* (entangle-epfds entangle)
-                 (entangle-max-events entangle)
-                 (tasks-timeout (entangle-tasks entangle))))
+    (let* ((next-todo-time (todo-min (entangle-todo entangle)))
+           (delta (fx- next-todo-time (entangle-time entangle)))
+           (timeout (if (negative? delta) 0 delta)))
+      (epoll-wait* (entangle-epfds entangle)
+                   (entangle-max-events entangle)
+                   timeout)))
 
   (define (entangle-on-write-callback entangle fd event)
     ;; TODO: unwatch the fd and then watch when there is read callback
@@ -86,14 +89,14 @@
             (loop #f (generator))))))
 
   (define (entangle-finished? entangle)
-    (and (tasks-empty? (entangle-tasks entangle))
+    (and (todo-empty? (entangle-todo entangle))
          (hash-table-empty? (entangle-on-write entangle))
          (hash-table-empty? (entangle-on-write entangle))))
 
   (define (now)
     ;; epoll expects time out in milliseconds, let's use milliseconds
     ;; everywhere.
-    (inexact (* (/ (current-jiffy) (jiffies-per-second)) 1000)))
+    (round (* (/ (current-jiffy) (jiffies-per-second)) 1000)))
   
   (define (entangle-run entangle)
     (let loop ()
@@ -101,5 +104,6 @@
         (entangle-time! entangle (now))
         (unless (entangle-run-once entangle)
           (hook-run (entangle-idle-hooks entangle) entangle))
+        ;; TODO: calls todo
         (loop)))))
             
