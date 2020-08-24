@@ -1,11 +1,10 @@
-(library (dwmt siset)
+(library (arew data siset)
 
   (export make-siset siset-size siset-empty? siset-pop! siset-add! siset-contains?)
 
   (import (scheme base)
           (scheme list)
           (scheme fixnum)
-          (scheme generator)
           (srfi srfi-145)
           (scheme comparator))
 

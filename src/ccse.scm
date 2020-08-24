@@ -1,64 +1,16 @@
-(import (only (chezscheme)
-              import time
-              cost-center-allocation-count
-              cost-center-time
-              with-cost-center generate-allocation-counts make-cost-center
-              fxsrl fxlogor fxsll fxlogand))
+(import (only (chezscheme) fxsrl fxlogor fxsll fxlogand))
 (import (scheme base))
 (import (scheme list))
 (import (scheme fixnum))
-(import (only (scheme bytevector) u8-list->bytevector))
 (import (scheme char))
 (import (scheme file))
 (import (scheme write))
 (import (scheme generator))
-(import (scheme process-context))
-(import (scheme hash-table))
 (import (scheme comparator))
-(import (scheme time))
+(import (scheme process-context))
 (import (arew network http))
-(import (dwmt aho-corasick))
-(import (dwmt file))
+(import (arew data aho-corasick))
 
-(define-syntax define-syntax-rule
-  (syntax-rules ()
-    ((define-syntax-rule (keyword args ...) body)
-     (define-syntax keyword
-       (syntax-rules ()
-         ((keyword args ...) body))))))
-
-(define timing '())
-(define timing2 0)
-(define timing3 0)
-
-(define-syntax-rule (define-profile timing (name args ...) body ...)
-  (define name
-    (lambda (args ...)
-      (let ((%start (current-jiffy)))
-        (call-with-values (lambda () body ...)
-          (lambda out
-            (let ((delta (- (current-jiffy) %start)))
-              (set! timing (cons (cons 'name delta) timing))
-              (apply values out))))))))
-
-(define-syntax-rule (lambda-profile timing (args ...) body ...)
-  (lambda (args ...)
-    (let ((%start (current-jiffy)))
-      (call-with-values (lambda () body ...)
-        (lambda out
-          (let ((delta (- (current-jiffy) %start)))
-            (set! timing (+ delta timing))
-            (apply values out)))))))
-
-(define (timing-format timing)
-  (define h (make-hash-table (make-default-comparator)))
-
-  (let loop ((timing timing))
-    (if (null? timing)
-        (for-each pk (hash-table->alist h))
-        (let ((total (hash-table-ref/default h (caar timing) 0)))
-          (hash-table-set! h (caar timing) (+ total (cdar timing)))
-          (loop (cdr timing))))))
 
 (define (generator-consume generator)
   (let loop ((byte (generator)))
@@ -68,12 +20,6 @@
 (define (file-port-generator port)
   (lambda ()
     (read-u8 port)))
-
-(define-record-type <warc-error>
-  (make-warc-error message payload)
-  warc-error?
-  (message warc-error-message)
-  (payload warc-error-payload))
 
 (define (generator-consume-line generator)
   (let loop ((byte (generator)))
@@ -109,8 +55,6 @@
                               (string-length line)))))
         (loop (generator->line generator)
               line))))
-
-(define filename "data/CC-MAIN-20200702045758-20200702075758-00039.warc.wet")
 
 (define (utf8->char generator)
   (define end? #f)
@@ -194,62 +138,30 @@
     (gmap char-downcase (utf8->char (warc-record-read wet-generator)))))
 
 (define wet-generator
-  (file-port-generator (open-binary-input-file filename)))
-
-(define (b0 generator)
-  (generator-consume (warc-record-read wet-generator))
-
-  (lambda ()
-    (warc-record-read wet-generator)))
-
-(define (b1)
-  (define gen (b0 wet-generator))
-
-  (let loop ()
-    (let ((body (gen)))
-      (generator-consume body)
-      (unless (any eof-object? (list (wet-generator) (wet-generator) (wet-generator) (wet-generator)))
-        (loop)))))
+  (file-port-generator (open-binary-input-file (cadr (command-line)))))
 
 (define warc-record-reader (warc-record-generator wet-generator))
 
 (define ac (make-aho-corasick))
 
-(define count* 0)
-
-(define total* 0)
-
-(let loop ((keywords '("search"
-                       "engine"
-                       "algorithm"
-                       "engineer"
-                       "software"
-                       "library"
-                       "program"
-                       "technology")))
+(let loop ((keywords (cddr (command-line))))
   (unless (null? keywords)
     (aho-corasick-add! ac (car keywords))
     (loop (cdr keywords))))
 
-(time (aho-corasick-compile! ac))
-(time (aho-corasick-compile-2! ac))
+(aho-corasick-finalize! ac)
 
-;; (aho-corasick-debug ac)
+(define count* 0)
 
-(pk 'searching2)
+(let loop ()
+  (let ((body (warc-record-reader)))
+    (unless (null? (aho-corasick-match ac body))
+      (display ".")
+      (set! count* (fx+ count* 1)))
+    (unless (any eof-object? (list (wet-generator)
+                                   (wet-generator)
+                                   (wet-generator)
+                                   (wet-generator)))
+      (loop))))
 
-
-(time (let loop ()
-        (let ((body (warc-record-reader)))
-          (when body
-            (when (fx<? 4 (length (delete-duplicates (aho-corasick-match ac body))))
-              (set! count* (fx+ count* 1)))
-            (unless (any eof-object? (list (wet-generator)
-                                           (wet-generator)
-                                           (wet-generator)
-                                           (wet-generator)))
-              (set! total* (fx+ total* 1))
-              (loop))))))
-
-(pk total* count*)
-(timing-format timing)
+(pk count*)

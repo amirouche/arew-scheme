@@ -1,9 +1,8 @@
-(library (dwmt aho-corasick)
+(library (arew data aho-corasick)
 
   (export make-aho-corasick
           aho-corasick-add!
-          aho-corasick-compile!
-          aho-corasick-compile-2!
+          aho-corasick-finalize!
           aho-corasick-debug
           aho-corasick-match)
 
@@ -12,34 +11,12 @@
           (scheme set)
           (scheme write)
           (scheme time)
-          (scheme process-context)          
+          (scheme process-context)
           (scheme comparator)
           (scheme hash-table)
           (scheme fixnum)
-          (dwmt siset)
-          (only (chezscheme) time pretty-print eval))
-
-  (define-syntax define-syntax-rule
-    (syntax-rules ()
-      ((define-syntax-rule (keyword args ...) body)
-       (define-syntax keyword
-         (syntax-rules ()
-           ((keyword args ...) body))))))
-
-  (define timing (make-hash-table (make-default-comparator)))
-
-  (define-syntax-rule (define-profile timing (name args ...) body ...)
-    (define name
-      (begin
-        (hash-table-set! timing 'name 0)
-        (lambda (args ...)
-          (let ((%start (current-jiffy)))
-            (call-with-values (lambda () body ...)
-              (lambda out
-                (let ((delta (- (current-jiffy) %start))
-                      (total (hash-table-ref timing 'name)))
-                  (hash-table-set! timing 'name (+ total delta))
-                  (apply values out)))))))))
+          (arew data siset)
+          (only (chezscheme) eval))
 
   ;; transitions hash-table helpers
 
@@ -151,74 +128,7 @@
     (display "\n}")
     (newline))
 
-
-  (define (aho-corasick-compile-2! aho-corasick)
-    (define root (aho-corasick-root aho-corasick))
-
-    (define (make-state-comparator)
-      (make-comparator state? eq? #f (lambda (x) (number-hash (state-uid x)))))
-
-    (define todo (make-siset (make-state-comparator)
-                             ;; XXX: magic number ahead?
-                             ;; TODO: document magic number!
-                             (max (round (/ (aho-corasick-size aho-corasick) 30)) 1)
-                             root))
-
-    (define (add! state)
-      (unless (vector-ref (aho-corasick-states aho-corasick) (state-uid state))
-        (siset-add! todo state)))
-
-    (define (next-add! state)
-      (unless (state-next state)
-        (siset-add! todo state)))
-
-    (define (compute-next state)
-      `(lambda (char fallback)
-         (case char
-           ,@(map (lambda (char* state*) `((,char*) ,(state-uid state*)))
-                  (hash-table-keys (state-transitions state))
-                  (hash-table-values (state-transitions state)))
-           (else (fallback char #f)))))
-
-    (aho-corasick-states! aho-corasick
-                          (make-vector
-                           (aho-corasick-size aho-corasick) #f))
-
-    (let loop ()
-      (unless (siset-empty? todo)
-        (let ((state (siset-pop! todo)))
-          (vector-set! (aho-corasick-states aho-corasick) (state-uid state) state)
-          (hash-table-for-each (lambda (_ child) (add! child))
-                               (state-transitions state)))
-        (loop)))
-
-    (set! todo (make-siset (make-state-comparator)
-                           ;; XXX: magic number ahead?
-                           ;; TODO: document magic number!
-                           (max (round (/ (aho-corasick-size aho-corasick) 30)) 1)))
-
-    (state-next! root 
-                 (eval `(lambda (char _)
-                          (case char
-                            ,@(map (lambda (char* state*)
-                                     `((,char*) ,(state-uid state*)))
-                                   (hash-table-keys (state-transitions root))
-                                   (hash-table-values (state-transitions root)))
-                            (else 0)))))
-    
-    (for-each next-add!
-              (hash-table-values (state-transitions root)))
-    
-    (let loop ()
-      (unless (siset-empty? todo)
-        (let ((state (siset-pop! todo)))
-          (unless (state-next state)
-            (state-next! state (eval (compute-next state)))
-            (for-each next-add!
-                      (hash-table-values (state-transitions state)))))
-        (loop))))
-
-  (define (aho-corasick-compile! aho-corasick)
+  (define (aho-corasick-finalize-step-1! aho-corasick)
     (define root (aho-corasick-root aho-corasick))
 
     (define (finalize! state char next-state)
@@ -268,7 +178,7 @@
       (error 'aho-corasick "aho-corasick is already finalized!"))
 
     (state-longest-strict-suffix! root root)
-   
+
     (let loop ()
       (unless (siset-empty? todo)
         (let ((state (siset-pop! todo)))
@@ -276,8 +186,77 @@
             (siset-add! done (state-uid state))
             (hash-table-for-each proc
                                   (state-transitions state))))
+        (loop))))
+
+  (define (aho-corasick-finalize-step-2! aho-corasick)
+    (define root (aho-corasick-root aho-corasick))
+
+    (define (make-state-comparator)
+      (make-comparator state? eq? #f (lambda (x) (number-hash (state-uid x)))))
+
+    (define todo (make-siset (make-state-comparator)
+                             ;; XXX: magic number ahead?
+                             ;; TODO: document magic number!
+                             (max (round (/ (aho-corasick-size aho-corasick) 30)) 1)
+                             root))
+
+    (define (add! state)
+      (unless (vector-ref (aho-corasick-states aho-corasick) (state-uid state))
+        (siset-add! todo state)))
+
+    (define (next-add! state)
+      (unless (state-next state)
+        (siset-add! todo state)))
+
+    (define (compute-next state)
+      `(lambda (char fallback)
+         (case char
+           ,@(map (lambda (char* state*) `((,char*) ,(state-uid state*)))
+                  (hash-table-keys (state-transitions state))
+                  (hash-table-values (state-transitions state)))
+           (else (fallback char #f)))))
+
+    (aho-corasick-states! aho-corasick
+                          (make-vector
+                           (aho-corasick-size aho-corasick) #f))
+
+    (let loop ()
+      (unless (siset-empty? todo)
+        (let ((state (siset-pop! todo)))
+          (vector-set! (aho-corasick-states aho-corasick) (state-uid state) state)
+          (hash-table-for-each (lambda (_ child) (add! child))
+                               (state-transitions state)))
         (loop)))
 
+    (set! todo (make-siset (make-state-comparator)
+                           ;; XXX: magic number ahead?
+                           ;; TODO: document magic number!
+                           (max (round (/ (aho-corasick-size aho-corasick) 30)) 1)))
+
+    (state-next! root
+                 (eval `(lambda (char _)
+                          (case char
+                            ,@(map (lambda (char* state*)
+                                     `((,char*) ,(state-uid state*)))
+                                   (hash-table-keys (state-transitions root))
+                                   (hash-table-values (state-transitions root)))
+                            (else 0)))))
+
+    (for-each next-add!
+              (hash-table-values (state-transitions root)))
+
+    (let loop ()
+      (unless (siset-empty? todo)
+        (let ((state (siset-pop! todo)))
+          (unless (state-next state)
+            (state-next! state (eval (compute-next state)))
+            (for-each next-add!
+                      (hash-table-values (state-transitions state)))))
+        (loop))))
+
+  (define (aho-corasick-finalize! aho-corasick)
+    (aho-corasick-finalize-step-1! aho-corasick)
+    (aho-corasick-finalize-step-2! aho-corasick)
     (aho-corasick-finalized?! aho-corasick #t))
 
   (define (aho-corasick-match aho-corasick generator)
