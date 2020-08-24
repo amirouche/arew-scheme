@@ -39,22 +39,29 @@
         (eof-object)
         (begin (set! count (fx- count 1)) (generator)))))
 
+;; WARC-Target-URI
+
 (define (warc-record-read generator)
   ;; consume WARC/1.0
   (generator-consume-line generator)
-  ;; lookup Content-Length
-  (let loop ((line (generator->line generator))
-             (previous #f))
-    (if (null? line)
-        (let ((line (list->string (map integer->char (reverse previous)))))
-          (generator) (generator)
-          (gtake* generator
-                  (string->number
-                   (substring line
-                              (string-length "Content-Length: ")
-                              (string-length line)))))
-        (loop (generator->line generator)
-              line))))
+
+  (let ((headers (http-headers-read generator)))
+    (let loop ((headers headers)
+               (uri #f)
+               (content-length #f))
+      (if (null? headers)
+          (begin 'null (values uri
+                               (gtake* generator content-length)))
+          (let ((key (string-downcase (caar headers))))
+            (cond
+             ((string=? key "warc-target-uri") (loop (cdr headers)
+                                                     (cdar headers)
+                                                     content-length))
+             ((string=? key "content-length")
+              (loop (cdr headers)
+                    uri
+                    (string->number (cdar headers))))
+             (else (loop (cdr headers) uri content-length))))))))
 
 (define (utf8->char generator)
   (define end? #f)
@@ -132,10 +139,17 @@
                  #\xfffd)))))))
 
 (define (warc-record-generator generator)
-  (generator-consume (warc-record-read wet-generator))
+  (call-with-values (lambda () (warc-record-read wet-generator))
+    (lambda (_ body)
+      (generator-consume body)))
 
+  ;; consume some CRLF
+  (generator) (generator) (generator) (generator)
+  
   (lambda ()
-    (gmap char-downcase (utf8->char (warc-record-read wet-generator)))))
+    (call-with-values (lambda () (warc-record-read wet-generator))
+      (lambda (uri body)
+        (values uri (gmap char-downcase (utf8->char body )))))))
 
 (define wet-generator
   (file-port-generator (open-binary-input-file (cadr (command-line)))))
@@ -144,6 +158,10 @@
 
 (define ac (make-aho-corasick))
 
+(define count* 0)
+
+(define expected-length (length (cddr (command-line))))
+
 (let loop ((keywords (cddr (command-line))))
   (unless (null? keywords)
     (aho-corasick-add! ac (car keywords))
@@ -151,17 +169,19 @@
 
 (aho-corasick-finalize! ac)
 
-(define count* 0)
 
 (let loop ()
-  (let ((body (warc-record-reader)))
-    (unless (null? (aho-corasick-match ac body))
-      (display ".")
-      (set! count* (fx+ count* 1)))
-    (unless (any eof-object? (list (wet-generator)
-                                   (wet-generator)
-                                   (wet-generator)
-                                   (wet-generator)))
-      (loop))))
+  (call-with-values warc-record-reader
+    (lambda (uri body)
+      (when (fx=? (length (delete-duplicates (aho-corasick-match ac body)))
+                  expected-length)
+        (display (string-append uri "\n"))
+        (set! count* (fx+ count* 1)))))
+  (wet-generator)
+  (wet-generator)
+  (wet-generator)
+  (wet-generator)
+  (unless (eof-object? (wet-generator))
+    (loop)))
 
 (pk count*)
