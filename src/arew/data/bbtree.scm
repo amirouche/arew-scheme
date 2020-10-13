@@ -1,7 +1,10 @@
-(library (arew data bbtre)
+w(library (arew data bbtree)
+  (export make-bbtree
+          bbtree-set
+          bbtree->alist)
 
-  (import (scheme base))
-  (import (scheme fixnum))
+  (import (scheme base)
+          (scheme fixnum))
 
   (define-record-type <bbtree>
     (%make-bbtree comparator root)
@@ -14,9 +17,12 @@
     node?
     (key node-key)
     (value node-value)
-    (size node-size)
+    (size %node-size)
     (left node-left)
     (right node-right))
+
+  (define (node-size maybe-node)
+    (if maybe-node (%node-size maybe-node) 0))
 
   (define (make-bbtree comparator)
     (%make-bbtree comparator #f))
@@ -32,16 +38,16 @@
     (and (fx<? a b) (fx<? (fxarithmetic-shift-left (fxand a b) 1) b)))
 
   (define (too-big? a b)
-    (log2< a (fxarithmetic-shift-right b 1)))
+    (log2<? a (fxarithmetic-shift-right b 1)))
 
   (define (single-rotation? a b)
-    (not (log2< b a)))
+    (not (log2<? b a)))
 
   (define (node-join key value left right)
     (make-node key
                value
-               (fx+ (node-size left)
-                    (node-size right)
+               (fx+ (fx+ (node-size left)
+                         (node-size right))
                     1)
                left
                right))
@@ -64,16 +70,17 @@
   (define (single-right-rotation key value left right)
     (node-join (node-key left)
                (node-value left)
+               (node-left left)
                (node-join key value (node-right left) right)))
 
   (define (double-right-rotation key value left right)
-    (make-node (node-key (node-right left))
+    (node-join (node-key (node-right left))
                (node-value (node-right left))
-               (make-node (node-key left)
+               (node-join (node-key left)
                           (node-value left)
                           (node-left left)
                           (node-left (node-right left)))
-               (make-node key value (node-right (node-right left)) right)))
+               (node-join key value (node-right (node-right left)) right)))
 
   (define (node-rebalance key value left right)
     (cond
@@ -91,46 +98,56 @@
           (double-right-rotation key value left right)))
      (else (make-node key
                       value
-                      (fx+ (node-size left)
-                           (node-size right)
+                      (fx+ (fx+ (node-size left)
+                                (node-size right))
                            1)
                       left
                       right))))
 
   (define (node-set node less? key value)
-    ;; XXX: For some reason, slib wttree will compare twice using
-    ;; less? using a comparator it it possible to use equal predicate,
-    ;; or better use the three-way if.
-    (cond
-     ((less? key (node-key node))
-      ;; KEY is less than current key, recurse left side
-      (node-rebalance (node-key node)
-                      (node-value node)
-                      (node-set (node-left node) less? key value)
-                      (node-right node)))
-     ((less? (node-key key) key)
-      ;; KEY is more than current key, recurse right side
-      (node-rebalance (node-key node)
-                      (node-value value)
-                      (node-left node)
-                      (node-set (node-right node) less? key value)))
-     (else
-      ;; Otherwise, the current KEY is the one, create a new node with
-      ;; associated VALUE.
-      (make-node key
-                 value
-                 (fx+ (node-size (node-left node))
-                      (node-size (node-right node))
-                      1)
-                 (node-left node)
-                 (node-right node)))))
+    (if (not node)
+        (make-node key value 1 #f #f)
+        ;; XXX: For some reason, slib wttree will compare twice using
+        ;; less? using a comparator it it possible to use equal predicate,
+        ;; or better use the three-way if.
+        (cond
+         ((less? key (node-key node))
+          ;; KEY is less than current key, recurse left side
+          (node-rebalance (node-key node)
+                          (node-value node)
+                          (node-set (node-left node) less? key value)
+                          (node-right node)))
+         ((less? (node-key node) key)
+          ;; KEY is more than current key, recurse right side
+          (node-rebalance (node-key node)
+                          (node-value node)
+                          (node-left node)
+                          (node-set (node-right node) less? key value)))
+         (else
+          ;; Otherwise, the current KEY is the one, create a new node with
+          ;; associated VALUE.
+          (make-node key
+                     value
+                     (fx+ (fx+ (node-size (node-left node))
+                               (node-size (node-right node)))
+                          1)
+                     (node-left node)
+                     (node-right node))))))
 
   (define (bbtree-set bbtree key value)
     (if (bbtree-empty? bbtree)
-        (make-bbtree (bbtree-comparator bbtree)
-                     (make-node key value 1 #f #f))
-        (make-bbtree (bbtree-comparator bbtree)
-                     (node-set (bbtree-root bbtree)
-                               (bbtree-comparator bbtree)
-                               key
-                               value))))
+        (%make-bbtree (bbtree-comparator bbtree)
+                      (make-node key value 1 #f #f))
+        (%make-bbtree (bbtree-comparator bbtree)
+                      (node-set (bbtree-root bbtree)
+                                (bbtree-comparator bbtree)
+                                key
+                                value))))
+
+  (define (bbtree->alist bbtree)
+    (define (node->alist node)
+      (append (if (node-left node) (node->alist (node-left node)) '())
+              (list (cons (node-key node) (node-value node)))
+              (if (node-right node) (node->alist (node-right node)) '())))
+
+    (node->alist (bbtree-root bbtree))))
