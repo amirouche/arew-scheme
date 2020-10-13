@@ -1,4 +1,4 @@
-w(library (arew data bbtree)
+(library (arew data bbtree)
   (export make-bbtree
           bbtree-set
           bbtree->alist)
