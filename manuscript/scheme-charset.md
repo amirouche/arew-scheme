@@ -12,7 +12,7 @@ is an unglamorous but very useful capability for text-processing code
 Is the object obj a character set?
 
 
-## `(char-set= cs1 ...)
+## `(char-set= cs1 ...)`
 
 Are the character sets equal?
 
@@ -183,9 +183,9 @@ remaining, unchosen characters. The procedure returns
                      0 cs))
 ```
 
-## `(char-set-unfold  f p g seed [base-cs])
+## `(char-set-unfold f p g seed [base-cs])`
 
-## `(char-set-unfold! f p g seed base-cs)
+## `(char-set-unfold! f p g seed base-cs)`
 
 This is a fundamental constructor for char-sets.
 
@@ -267,7 +267,7 @@ function -- so copies are not guaranteed to be distinct by eq?.
 
 Return a character set containing the given characters.
 
-## `(list->char-set  char-list [base-cs])
+## `(list->char-set  char-list [base-cs])`
 
 ## `(list->char-set! char-list base-cs)`
 
@@ -279,7 +279,7 @@ are added to it. list->char-set! is allowed, but not required, to
 side-effect and reuse the storage in base-cs; list->char-set produces
 a fresh character set.
 
-## `(string->char-set  s [base-cs])
+## `(string->char-set  s [base-cs])`
 
 ## `(string->char-set! s base-cs)`
 
@@ -415,15 +415,15 @@ to return the character parameter as its true value, e.g.
                   cs)
 ```
 
-## `(char-set-adjoin cs char1 ...)
+## `(char-set-adjoin cs char1 ...)`
 
-## `(char-set-delete cs char1 ...)
+## `(char-set-delete cs char1 ...)`
 
 Add/delete the chari characters to/from character set cs.
 
-## `(char-set-adjoin! cs char1 ...)
+## `(char-set-adjoin! cs char1 ...)`
 
-## `(char-set-delete! cs char1 ...)
+## `(char-set-delete! cs char1 ...)`
 
 Linear-update variants. These procedures are allowed, but not
 required, to side-effect their first parameter.
@@ -432,13 +432,13 @@ required, to side-effect their first parameter.
 
 ## `(char-set-union cs1 ...)`
 
-## `(char-set-intersection cs1 ...)
+## `(char-set-intersection cs1 ...)`
 
 ## `(char-set-difference cs1 cs2 ...)`
 
 ## `(char-set-xor cs1 ...)`
 
-## `(char-set-diff+intersection cs1 cs2 ...)
+## `(char-set-diff+intersection cs1 cs2 ...)`
 
 These procedures implement set complement, union, intersection,
 difference, and exclusive-or for character sets. The union,
