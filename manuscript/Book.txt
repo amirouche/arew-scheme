@@ -1,8 +1,6 @@
 preface-and-copyright.md
 introduction.md
 tutorial.md
-fdb-compendium.md
-fts.md
 scheme-base.md
 scheme-bitwise.md
 scheme-box.md
@@ -45,3 +43,4 @@ scheme-text.md
 scheme-time.md
 scheme-vector.md
 scheme-write.md
+foundationdb.md

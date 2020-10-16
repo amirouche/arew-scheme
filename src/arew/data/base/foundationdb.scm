@@ -24,8 +24,6 @@
    fdb-future-set-callback
    fdb-future-get-error
    fdb-future-get-key
-   fdb-future-get-cluster
-   fdb-future-get-database
    fdb-future-get-value
    fdb-future-get-range
    fdb-create-database
