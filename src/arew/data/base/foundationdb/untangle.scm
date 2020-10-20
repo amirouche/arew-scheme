@@ -47,7 +47,7 @@
        (lambda (future)
          (let ((error (fdb-future-get-error future)))
            (fdb-future-destroy future)
-           (future-continue-with-lock future* (list error))))))
+           (future-continue future* (list error))))))
 
     (define (fdb-transaction-commit transaction)
       (let ((future (fdb-transaction-commit (transaction-pointer transaction)))
@@ -67,7 +67,7 @@
        (lambda (future)
          (let ((error (fdb-future-get-error future)))
            (fdb-future-destroy future)
-           (future-continue-with-lock future* (list error))))))
+           (future-continue future* (list error))))))
 
     (define (fdb-in-transaction fdb proc)
       (let ((tx (fdb-transaction-begin fdb)))
@@ -100,10 +100,10 @@
            (if (zero? error)
                (let ((value (fdb-future-get-value future)))
                  (fdb-future-destroy future)
-                 (future-continue-with-lock future* (list 0 value)))
+                 (future-continue future* (list 0 value)))
                (begin
                  (fdb-future-destroy future)
-                 (future-continue-with-lock future* (list error #f))))))))
+                 (future-continue future* (list error #f))))))))
 
     (define (fdb-ref tx key)
       (let ((future (fdb-transaction-get (transaction-pointer tx)
@@ -133,10 +133,10 @@
            (if (zero? error)
                (let ((range (fdb-future-get-range future)))
                  (fdb-future-destroy future)
-                 (future-continue-with-lock future* (list 0 range)))
+                 (future-continue future* (list 0 range)))
                (begin
                  (fdb-future-destroy future)
-                 (future-continue-with-lock future* (list error #f))))))))
+                 (future-continue future* (list error #f))))))))
 
     (define (fdb-range transaction
                        start-key

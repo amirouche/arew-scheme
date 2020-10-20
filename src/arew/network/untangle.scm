@@ -114,8 +114,6 @@
             (abort-to-prompt future 'future))))
 
     (define (future-continue future values)
-      ;; future-continue is not thread-safe, see
-      ;; future-continue-with-lock.
       (with-mutex (future-mutex future)
         (if (future-continuation future)
             ;; Some code already called `await` on the future ie. they
@@ -124,15 +122,6 @@
             ;; Concurrently, the values are set before the future is
             ;; awaited.  Set the values to allow, await to return
             ;; immediatly.
-            (future-values! future values))))
-
-    (define (future-continue-with-lock future values)
-      ;; The same as future-continue, except it is thread-safe, it can
-      ;; be called in a parallel thread.
-      (with-mutex (future-mutex future)
-        (if (future-continuation future)
-            ;; XXX: Use spawn-with-lock instead of spawn.
-            (spawn-with-lock (lambda () (apply (future-continuation future) values)))
             (future-values! future values))))
 
     (define make-event cons)
@@ -179,9 +168,6 @@
           (spawn (event-continuation event)))))
 
     (define (spawn thunk)
-      (set! %queue (cons thunk %queue)))
-
-    (define (spawn-with-lock thunk)
       (with-mutex %mutex
         (spawn thunk)))
 
