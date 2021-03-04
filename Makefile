@@ -22,8 +22,16 @@ termbox:
 	cd local/src && git clone https://github.com/amirouche/termbox-truecolor
 	cd local/src/termbox-truecolor/ && ./waf configure
 	cd local/src/termbox-truecolor/ && ./waf
-	mkdir local/lib
+	mkdir -p local/lib
 	cp local/src/termbox-truecolor/build/src/libtermbox.so local/lib/
+
+blake3:
+	mkdir -p local/src
+	rm -rf local/src/BLAKE3
+	cd local/src && git clone https://github.com/BLAKE3-team/BLAKE3/
+	cd local/src/BLAKE3/c && gcc -shared -O3 -o libblake3.so blake3.c blake3_dispatch.c blake3_portable.c     blake3_sse2_x86-64_unix.S blake3_sse41_x86-64_unix.S blake3_avx2_x86-64_unix.S     blake3_avx512_x86-64_unix.S
+	mkdir -p local/lib
+	cp local/src/BLAKE3/c/libblake3.so local/lib/
 
 chez:
 	mkdir -p $(PREFIX)/local/src
