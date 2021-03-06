@@ -54,7 +54,7 @@
   ;; lexicographic comparison
 
   ;; TODO: add a few fixnum calls
-  ;; TODO: replace with a macro
+  ;; TODO: add a 3-way-if macro
 
   ;; If BYTEVECTOR is before OTHER return -1, if equal return 0,
   ;; otherwise if BYTEVECTOR is after OTHER return 1
@@ -77,7 +77,7 @@
                     -1
                     1)))))))
 
-;; TODO: go through the range in correct order!!
+;; TODO: go through the range in other order!!
 (define (generator-range okvs key other)
   (define cursor (okvs-cursor-open okvs))
 
@@ -110,7 +110,7 @@
     (if (not (okvslite-cursor-valid? cursor))
         (fini!)
         (let* ((key* (okvslite-cursor-key cursor))
-               ;; comparison is done again KEY.
+               ;; comparison is done against KEY.
                (shift (compare key key*)))
           (cond
            ((fx=? shift 1) key*)
