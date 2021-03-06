@@ -1,0 +1,204 @@
+       Examples and the sample code of SSAX parsing and SXML transformations
+
+You need GNU Make to build the targets. To run any of the examples, you need
+to do
+	make PLATFORM=<platform> <target-name>
+where <platform> is scmi, petite, biglooi. See the Makefile in this
+directory for more details.
+
+
+Remove-tags example
+-------------------
+
+Target name: remove-markup
+
+Given an XML document, remove all the markup and print the resulting document.
+This is a simple in-out application.
+
+
+Outline example
+--------------- 
+
+Target name: outline
+
+Pretty-print the structure of an XML document (disregarding the
+character data)
+This example corresponds to outline.c of the Expat distribution.
+The example demonstrates how to transform an XML document on the
+fly, as we parse it.
+
+Note that the tags of elements with no XML namespace are printed as
+they are. Tags of elements within an XML namespace are printed as a
+pair (Namespace-URI . Local-name)
+
+
+SXML example
+------------
+
+Target name: run-sxml
+
+Transform an XML document into SXML. See ../docs/SXML.html for
+the description.
+
+
+Permissive HTML parsing
+-----------------------
+
+Target name: html-parser
+
+This example gets SSAX to _permissively_ parse HTML documents or HTML
+fragments. Because HTML browsers are so lax, many web pages on the
+Internet contain invalid HTML. For example, the FrontPage editor is
+notorious for creates such invalid sequences as <b><i>text</b></i>.
+
+SSAX is more than an XML parser -- it is a library, which includes
+lexers and parsers of various kinds. The library comes in handy when
+we need to permissively parse (or better say, lex) HTML. Because we
+accept even HTML with unmatched tags, we make no attempt in this
+example to recover the structure. We faithfully record all the
+occurring tags and let the user sort out what matches what. Here's the
+result of parsing of an ill-composed sample document, which includes
+comments, parsed entities and attributes of various kinds.
+	
+Source:
+ <html> <head> <title> </title> <title> whatever </title> </head>
+  <body> <a href=\"url\">link</a> <p align=center> <ul compact
+style='aa'>
+  <p> BLah <!-- comment <comment> --> <i> italic <b> bold <tt> ened
+</i> still  &lt; bold </b>
+  </body>
+  <P> But not done yet...
+	
+Result: a flat list (a token stream)
+	
+(#(START html ()) " " #(START head ()) " " #(START title ())
+  " " #(END title) " " #(START title ()) " whatever " #(END title) " "
+  #(END head) "\n  "
+  #(START body ()) " " #(START a ((href . "url"))) "link" #(END a) " "
+  #(START p ((align . "center"))) " "
+  #(START ul ((compact . "compact") (style . "aa")))
+  "\n  " #(START p ()) " BLah  " #(START i ()) " italic "
+  #(START b ()) " bold " #(START tt ()) " ened " #(END i)
+  " still  < bold " #(END b) "\n  " #(END body)
+  "\n  " #(START P ()) " But not done yet...")
+	
+Note that the parser handled "&lt;" and other parsed entity
+references. The parser fully preserved all the whitespace (including
+newlines). Also note that the three possible styles of HTML attributes
+	<tag name="value">  <tag name=value>  <tag name>
+are handled properly. In addition, single quotes are also
+allowed. Comments are silently skipped.
+
+This example, after it is built, parses the sample HTML document and
+prints out the above result.
+
+
+SXML Transformations
+--------------------
+
+The following three examples demonstrate SXML transformations, from
+trivial to advanced. The advanced examples exhibit context-sensitive
+transformations: the result of the conversion of an SXML tag depends on
+that tag's context, i.e., siblings, parents or descendants. See also
+../docs/Makefile for an SXML transformation that turns SXML.scm (the
+SXML Specification's master file) into HTML and LaTeX documents. The
+examples in this directory:
+
+	apply-templates.scm
+		A simple example of a XSLT-like 'apply-templates' form
+	sxml-db-conv.scm
+		Using higher-order transformers for context-sensitive
+		transformations. The example also shows the treatment of
+		XML Namespaces in SXML and the namespace-aware
+		pretty-printing of SXML into XML.
+	pull-punct-sxml.scm
+		A Context-sensitive recursive transformation
+		and breadth-first-like traversals of a SXML document
+	sxml-nesting-depth-label.scm
+		Labeling nested sections of an SXML document by
+		their nesting depth. This is another example of traversing
+		an SXML document with a stylesheet that differs from
+		node to node.
+	sxml-to-sxml.scm
+		Transforming SXML to SXML: Composing SXML transformations.
+		The code introduces and tests a version of pre-post-order
+		that transforms an SXML document into a _strictly conformant_
+		SXML document. That is, the result of a pre-post-order
+		transformation can be queried with SXPath or transformed
+		again with SXSLT.
+
+
+The names of the targets are the names of the above files without the .scm
+extension.
+
+
+Parsing and Unparsing of a Namespace-rich XML document
+------------------------------------------------------
+
+Target name: daml-parse-unparse
+
+The file daml-parse-unparse.scm parses a DAML (DARPA Agent Markup
+Language -- XML ontology) document and unparses it. A DAML document
+has a _great_ deal of namespaces. Some of them are represented by
+namespace shortcuts, some are not. The test prints out the SXML after
+the parsing, with all the XML namespaces ids and URIs. The file
+daml-parse-unparse.scm file unparses the SXML tree back into XML. The
+code then verifies that we can parse that unparsed document
+again. Furthermore, the code tests that the following invariant holds:
+        PARSE . UNPARSE . PARSE === PARSE
+
+
+An advanced example of SXSLT transformations
+--------------------------------------------
+
+Target name: sxslt-advanced
+
+The example transforms an SHTML-like SXML document with nested
+sections into a web page with hierarchically numbered and marked up
+sections and subsections. The example also generates a hierarchical
+table of contents.
+
+This example is due to Jim Bender.
+
+The example is aimed to be illustrative of various SXSLT facilities
+and idioms.  In particular, we demonstrate: higher-order tags,
+pre-order and post-order transformations, re-writing of SXML elements
+in regular and special ways, context-sensitive applications of
+re-writing rules. Finally, we illustrate SXSLT reflection: an ability
+of a rule to query its own stylesheet and to re-apply the stylesheet
+with "modifications".
+
+The file sxslt-advanced.scm should be more properly called a tutorial,
+with a few occasional lines of code.
+
+
+Parent pointers in SXML trees
+-----------------------------
+
+Target name: parent-pointers
+
+This is the source code for an article 'On parent pointers in SXML
+trees' posted on the SSAX-SXML mailing list. The code implements and
+tests four different techniques of determining the parent of an SXML
+node. The code includes two custom instantiations of the SSAX
+framework, to add various kinds of parent "pointer" annotations to
+SXML nodes as we parse an XML document.
+
+
+
+SSAX parsing with limited XML doctype validation and datatype conversion
+------------------------------------------------------------------------
+
+Target name: validate-doctype-simple
+
+The present test instantiates the SSAX parser framework to support a
+limited document type validation and datatype conversion. We
+demonstrate atomic content validation and structural validation. To be
+precise, if the content model of an element is declared to be 'bool or
+'int, we make sure the corresponding character data in the source XML
+document indeed represent a boolean or an integer. If the content
+validates, we convert it to a boolean or an integer value for the
+resulting SXML.  We also show validation of a simple structural
+constraint, the sequence of child elements matching a user-specified
+template.
+

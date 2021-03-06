@@ -1,0 +1,6 @@
+Comparing SSAX and Expat XML parsers in features and performance
+
+Please refer to the file
+       ../docs/SSAX-benchmark-1.html 
+or
+       http://okmij.org/ftp/Scheme/SSAX-benchmark-1.html

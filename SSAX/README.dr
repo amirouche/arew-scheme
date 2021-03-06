@@ -1,0 +1,42 @@
+        SSAX and SXML - XML parsing and processing in Scheme
+        ----------------------------------------------------
+
+What this package contains:
+
+ssax-sourceforge.scm    SSAX-SXML SourceForge home page, in SXML
+
+lib/			XML parsing and SXML transformation library
+lib/SSAX.scm		The SSAX XML parser
+lib/SSAX-code.scm	   The same as above sans the comments and the
+			   built-in tests. Run 'make SSAX-code.scm' in
+			   that directory
+lib/SSAX-expanded.scm      SSAX.scm with all syntax-rules expanded out.
+			   Intended for Scheme systems without syntax-rule 
+			   support.
+
+lib/packages.scm	Description of SSAX-SXML functions and files
+			   in Scheme48/PLT module language
+
+lib/myenv.scm		My standard prelude, for various Scheme systems
+lib/myenv-bigloo.scm		Bigloo
+lib/myenv-scm.scm		SCM Scheme
+lib/myenv-mit.scm		MIT Scheme
+lib/myenv-chez.scm		Petite Chez Scheme
+
+lib/input-parse.scm	The input parsing
+lib/look-for-str.scm		library
+
+		Plus a few other utilities
+
+
+examples/		Several examples of using the libraries
+examples/README			Description
+
+benchmarks/		Benchmark code
+
+tests/			Validation tests of the library
+tests/Makefile			See the list of the targets to make
+
+docs/			Documentation about SXML and SSAX
+
+

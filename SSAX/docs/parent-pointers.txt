@@ -1,0 +1,375 @@
+On parent pointers in SXML trees
+
+* Abstract
+
+In this article we discuss and compare five different methods of
+determining the parent of an SXML node. The existence of these methods
+is a crucial step in a constructive proof that SXML is a complete
+model of the XML Information set, and SXPath is a complete
+implementation of the XPath Recommendation. Four of the five
+techniques of determining the parenthood require no mutations, and can
+be implemented in a pure and strict functional language. Three of the
+five techniques rely on annotations attached to SXML nodes. The
+techniques differ in the nature of the annotations and in the time
+complexity of attaching and using these annotations.  The complete
+source code of four techniques is included.
+
+* Definitions of terms
+
+See
+	http://pobox.com/~oleg/ftp/Scheme/xml.html
+for the definitions of SXML, SXPath, and other terms used in this
+article.
+
+
+* Introduction
+
+An XML processing application may need to locate a parent, an
+ancestor, or a sibling of the current XML element. The XPath
+Recommendation specifies "parent::", "ancestor::" and various sibling
+axes for that purpose. Correspondingly, an item in an XPath data
+structure, or in the XML Information set in general, has a "parent"
+property. That property is an upward link from a child to its
+parent. S-expressions then seem lacking in that respect: S-expressions
+represent directed trees and trees cannot have upwards pointers. It
+may appear therefore that S-expressions cannot properly model the XML
+information set. One might conclude that SXML -- an abstract syntax
+tree of an XML document in the form of S-expressions -- is deficient
+and the SXML query language (SXPath) cannot fully implement the XPath
+Recommendation.
+
+In this article we consider three major approaches for locating the
+parent of an SXML node. One approach is to search the SXML tree for a
+parent, the second approach relies on SXML trees decorated with some
+kind of parent "pointers". The third approach is based on a query
+re-writing.  Each approach entails a trade-off among these parameters:
+space and time complexities of adding annotations to SXML nodes; speed
+of locating the parent; space leaks and undesired sharing; complexity
+of serialization and de-serialization of the annotated SXML;
+generality; functional purity.
+
+The approach of annotating the SXML tree with parent "pointers" is
+particularly tricky. Parent pointers, if taken literally, turn a tree
+into a doubly connected graph. It is far from straightforward to
+create cyclical structures in a pure functional way. Furthermore, the
+double connectivity is a curse. We can no longer compare two SXML
+fragments with 'equal?' or print them with 'display' or 'write'. SXML
+datastructures with true parent pointers require extra care, to avoid
+inadvertently following the back pointer and thus falling into an
+infinite loop. The double connectivity has a more serious problem. If
+we take a node from an SXML tree and move it into another tree, the
+node still points to its original parent, and to its parent, and
+eventually to the root of the whole tree. A serious space leak ensues:
+If we reference only a leaf node, the entire datastructure is
+reachable and cannot be garbage collected.
+
+We demonstrate three implementations of the annotation-based
+approach. One of them turns an SXML structure into a general cyclic
+graph, another makes an SXML structure a DAG. The third implementation
+adds the parent "pointers" to SXML tree and still keeps the data
+structure a tree, with only a single path between any two nodes.
+
+	  - Searching for a parent in a SXML tree
+	  - Parent pointers as SXML node annotations
+	  - A genuine _tree_ with thunked parent pointers
+	  - Building an SXML tree with parent pseudo-pointers
+	  - Rewriting an XPath query to avoid backward axes
+
+Only one method requires mutation. All other techniques in this
+article are purely functional and can be implemented in a strict
+functional language. The dictionary-based implementation seems to
+offer the best trade-off. The annotated SXML tree can be created "on
+the fly," as we parse the XML document. The annotated SXML can be
+easily serialized and reconstructed. The approach avoids space leaks
+caused by undesired sharing. If the dictionary of nodes is implemented
+using an appropriate data structure such as a hash table, locating the
+parent of a node is efficient.
+
+
+The first four techniques are implemented in the source code file
+parent-pointers.scm that accompanies the article. The code has been
+checked in the SSAX CVS repository as
+	SSAX/examples/parent-pointers.scm
+You can also view the code as
+ http://cvs.sf.net/cgi-bin/viewcvs.cgi/ssax/SSAX/examples/parent-pointers.scm
+
+The code verifies the four parenthood techniques by printing out
+ancestorial chains for a sample XML document. For each element in the
+sample document, we print the names of its parent element, its
+grandparent element, etc. The function to print ancestorial chains,
+'print-ancestors', is generic. It takes a source SXML tree and a
+get-parent function. Each of the four techniques implemented in
+parent-pointers.scm computes the SXML data structure in its own way
+(with its own annotations, if any) and defines its own get-parent
+function. For simplicity, the source code parent-pointers.scm elides
+XML attributes and namespaces. The full source code of SSAX and
+SXPathLib implements parenthood queries without any simplifications.
+
+
+* Searching for a parent in a SXML tree
+
+The absence of an explicit upward link from a child to a parent in
+SXML appears to break the isomorphism between SXML and the XPath data
+model. The XPath Recommendation however offers help. The "Data Model"
+Section of the Recommendation (Section 5) says that each node in an
+XPath tree is unique, and nodes never share children. SXML trees
+constructed by the SSAX parser have this property. Since an XPath
+expression may include an absolute location path, the evaluation
+context of the expression must contain the root node. These two facts
+show that the upward link from a child element to its parent is always
+(conceptually) present in an SXML tree. To determine the parent of a
+SXML node, we search the SXML tree, from the root node down, for a
+node that contains the given node among its children:
+
+	parent(x) = { y | y=child*(root), x=child(y) }
+
+The first solution in parent-pointers.scm shows a simple
+implementation of this idea. We search an SXML tree in the depth-first
+order. We test our implementation by determining and printing
+ancestorial chains for each element in a sample XML document. A
+function 'node-parent' in SXPath.scm is a "production" implementation
+of the same idea, which accounts for XML attributes and namespaces. A
+function 'sxp:parent' in Kirill Lisovsky's SXPath-ext relies on a more
+efficient breadth-first search for parents.
+
+The present search-based approach has an advantage of requiring no
+annotations on SXML nodes. We work with a single linked SXML tree (as
+it was produced by ssax:xml->sxml) and incur no storage overhead for
+parent pointers. The tree can be easily serialized and reconstructed,
+using ordinary 'write' and 'read' Scheme functions. The present
+approach trades time for space. If we start from the root, searching
+the whole tree for a parent is clearly expensive. On the other hand,
+if we know some ancestor of the current node (because we took a note
+of the ancestor before the downward traversal), the search space can
+be significantly reduced.
+
+
+* Parent "pointers" as SXML node annotations
+
+The second approach to determining the parenthood takes advantage of
+an aux-list offered by the SXML Specification. An aux-list of a SXML
+node is a list of ancillary properties -- annotations -- of a node. An
+association "(parent parent-pt)" may be one of such annotations. This
+approach clearly trades space for speed of locating the parent of a
+node. We show three realizations of the annotation approach, which
+differ in the meaning of the "pointer".
+
+
+* Real parent pointers
+
+The first implementation of the annotation approach (Solution 2 of
+parent-pointers.scm) decorates SXML nodes with real parent
+pointers. Each SXML node except the *TOP* includes an aux-list with an
+association `(parent ,ptr-to-parent) where ptr-to-parent is a
+reference to the parent of that node.
+
+An SXML data structure with true parent pointers is no longer a
+tree. Rather, it is a general, cyclic graph. Care must be taken when
+displaying, comparing or processing such a data structure. In
+particular, we should use display-circle or SRFI-38 but never a naive
+display to output this SXML data structure.
+
+We can construct the annotated SXML as we parse the corresponding XML
+document. A function 'xml->true-parent-sxml' in parent-pointers.scm is
+such a parser, which is a custom instantiation of SSAX. The time
+overhead of adding annotations is therefore negligible. Locating a
+parent is also very fast: we merely need to extract the reference to
+the parent from the aux-list of a node.
+
+To create real parent pointers as we construct SXML, we must do
+destructive updates.  It is not possible to build cyclic data
+structures in a strict language without mutations. Because of them,
+the parsing code 'xml->true-parent-sxml' is notably trickier.
+
+The advantage of this approach is the speed of locating the parent of
+a node. It is a constant-time operation. Adding the annotations is
+also easy and can be done at the time of parsing XML. The obvious
+disadvantage is the space overhead for storing parent-pointer
+annotations in aux-lists. A more serious drawback is double
+connectivity of the annotated SXML data structure. We can no longer
+compare (by equal?), print or naively traverse SXML fragments lest we
+fall into the infinite loop. Furthermore, double connectivity leads to
+a serious space leak, as we have discussed earlier.
+
+Kirill Lisovsky's SXPath-ext offers a variation of this approach. His
+annotated SXML datastructures wrap parent pointers in thunks. Because
+procedural values in Scheme are opaque (and in general are not
+examined by 'display' or 'equal?' functions), there is no longer a
+danger of falling into the infinite loop when comparing, printing or
+traversing such SXML. Thunks however require more space. Furthermore,
+the true pointers within a thunk are not hidden from the garbage
+collector. If any node of the SXML structure is reachable, the whole
+structure is reachable and cannot be garbage collected.
+
+When we write out the annotated SXML, we must obviously exclude the
+parent pointer annotations from the serialization process. The
+exclusion applies even if the pointers are wrapped in thunks: we
+cannot portably serialize closures. The de-serialized SXML will
+therefore lack any parent pointer annotations. These annotations have
+to be added explicitly in a dedicated traversal pass.
+
+
+* A genuine _tree_ with thunked parent pointers
+
+The method in this section also relies on a SXML tree whose nodes are
+annotated with parent pointers. To be more precise, each node except
+the *TOP* should have an aux-list with an association 
+`(parent ,thunk-ptr-to-parent)
+
+In contrast to the previous approach, thunk-ptr-to-parent is not the
+reference to the parent of the node. Rather, it is a nullary
+procedure, a thunk, which, when applied, yields an SXML node that is
+the parent of the current node.
+
+There is another difference from the true parent pointers technique.
+An SXML tree with thunked parent pointers can be built without any
+mutations whatsoever, in a pure functional way. Furthermore, the SXML
+datastructure with thunked parent annotations is _truly_ a tree.  We
+must incur however a separate tree traversal pass -- which takes an
+SXML tree without parent annotations (e.g., the output of the ordinary
+ssax:xml->sxml) and returns an SXML tree with annotations.
+
+There is a subtlety in the current approach. Indeed, it sounds
+contradictory: how can we add backward pointers to a tree in a pure
+functional way and still maintain the tree property (there is only
+one path between any two nodes)? If we look carefully at the
+annotating function 'add-thunk-parent-pt' in parent-pointer.scm
+we note an odd feature: if 'node' is a proper SXML node other than
+the *TOP*, then
+    (memq node (node-children (get-parent-from-thunk-pt node)))
+is actually #f. However
+    (member* node (node-children (get-parent-from-thunk-pt node)))
+is #t
+where member* is the ordinary procedure member that uses a special
+equal*? procedure to compare SXML nodes modulo their aux-lists.
+
+The odd feature arises from the fact that the doubly connected graph
+with forward and backward node pointers is "virtual". The graph is
+computed on demand as a *fixpoint* of an expression (elem-add-parent
+original-tree).  Because our parent pointers are thunks, we delay a
+fixpoint iteration until it is demanded. We therefore avoid the
+divergence of the fixpoint, notwithstanding the strict nature of our
+host language. The fact that a node is not a child of its parent (if
+we use eq? to compare nodes) -- but it is a child of its parent if we
+use equal*? -- should not matter in a pure functional context. Indeed,
+the notion of an extensional equality, eq?, does not exist in a pure
+functional context, as Henry Baker pointed out. In fact, pure
+functional languages like Haskell do not provide the eq? equality
+predicate.
+
+The present technique suffers the overhead of storing the thunked
+parent pointers. Closures typically take quite a bit of memory. Adding
+annotations needs a separate pass over the SXML tree. Determining the
+parent of a node is also quite expensive as it requires performing one
+fixpoint iteration. One advantage is that despite the thunked parent
+pointers, our tree remains a tree at all times. Therefore, we can
+safely print it out using 'display' and traverse it, without worrying
+about falling into an infinite loop.
+
+The present approach is perhaps more academic than practical. It does
+however make us think what a parent pointer is or could be. We thus
+come to the dictionary approach, which seems to give the best overall
+trade-off.
+
+
+* Building an SXML tree with parent pseudo-pointers
+
+The present technique also locates the parent of a node with the help
+of annotations attached to SXML tree nodes. Each node except the *TOP*
+should have an aux-list with an association 
+`(parent ,node-id-of-the-parent)
+
+Here 'node-id-of-the-parent' is a pseudo-pointer to the parent of the
+current node. A pseudo-pointer is an node-id, a symbol, which is a
+key in a dictionary of node-ids. The *TOP* element of our annotated
+SXML tree must have an aux-list with an association
+     `(node-id-dict ,dictionary-of-node-ids)
+where dictionary-of-node-ids is, in the present case, an associative
+list of (node-id pointer). The performance of the get-parent procedure
+improves if we use a more advanced data structure for the dictionary
+of node ids, for example, a balanced tree or a hash table.
+
+We can construct the annotated SXML as we parse the corresponding XML
+document. A custom XML parser xml->dict-parent-sxml (an instantiation
+of SSAX) in parent-pointer.scm does that. The time overhead of adding
+annotations is therefore negligible. To determine the parent of a node,
+we extract the id of the parent from the aux-list of the node, and
+locate the parent itself through the dictionary-of-node-ids. If the
+latter is implemented as a balanced tree or a hash table, the lookup
+should be reasonably fast.
+
+In contrast to the true-parent-pointer approach above, parent
+pseudo-pointers annotations can be added to an SXML tree in a pure
+functional way. Absolutely no mutations to SXML nodes are necessary.
+There is also another important difference between the two approaches.
+An SXML data structure with true parent pointers is not a tree and is
+not a DAG. It contains directed cycles. The double connectivity means
+that if any node is reachable, all of the data structure is
+reachable. This fact presents a grave problem for the garbage
+collector and leads to a significant space leak. In contrast, an SXML
+data structure with parent pseudo-pointers is a DAG. Each node but
+the *TOP* one is referenced from its parent and from the dictionary of
+node-ids. However, there are no directed cycles. If we retain a leaf
+of such a tree, the rest of the tree can be garbage collected.
+
+Thus, in the present approach we incur the overhead of parent
+pseudo-pointers, which amounts to a list of two symbols per node, plus
+the size of the dictionary of nodes. The dictionary of nodes can be
+used for other purposes, for example, for resolving XML IDs. In that
+case, the dictionary is not entirely an overhead. Adding the
+annotations is fast because the annotated tree can be constructed as
+we parse an XML document. Locating the parent can be fast, given an
+efficient implementation of the dictionary of nodes. As we have noted,
+the dictionary can be used for other purposes. The annotated SXML data
+structure is a DAG and does not contain directed cycles. Therefore,
+the danger of a space leak is avoided. When serializing the annotated
+SXML, we should exclude the dictionary of node-ids but can write out
+the parent pseudo-pointers annotations as they are. We can use the
+ordinary Scheme functions 'write' and 'read' for the body of the
+annotated SXML. When we read the serialized SXML back, we merely need
+to reconstruct the dictionary of node-ids, which requires one pass
+through the tree. Overall, the present approach seems to give the best
+overall trade-off.
+
+
+* Rewriting an XPath query to avoid backward axes
+
+The third approach to implementing parenthood queries in trees is
+eliminating such queries. In some contexts, an SXPath expression with
+an upward-looking axis such as parent:: or ancestor:: can be
+re-written into an SXPath expression with only downward-looking
+axes. For example, an XPath expression
+	//p[../div]
+can be replaced with
+	//div/p
+Indeed, the former expression selects all 'p' nodes in the document
+that have 'div' parents. On the other hand, "//div/p" finds all 'div'
+nodes and then extracts and returns their 'p' children. The end result
+is the same.
+
+In much more detail, this topic has been researched in a paper
+
+   XPath: Looking Forward
+   Dan Olteanu, Holger Meuss, Tim Furche, Fran[E7]ois Bry
+
+   Research Report PMS-FB-2002-4, 2002
+   The Electronic Library journal, volume 20, number 4, 275-287, 2002
+
+http://www.pms.informatik.uni-muenchen.de/publikationen/PMS-FB/PMS-FB-2002-4.abs
+I am grateful to Je'ro^me Sime'on for pointing out this paper.
+
+The paper introduces two algorithms for transforming (subsets of)
+XPath 1.0 expressions containing reverse axes into reverse-axis-free
+equivalents.
+
+The query re-writing technique has an advantage of no space overhead
+for storing parent "pointer" annotations. This approach can process
+SXML data structures that are truly trees. The trees can be easily
+serialized and reconstructed, using ordinary 'write' and 'read' Scheme
+functions. The approach has the excellent performance: an XPath query
+with only forward-looking axes can be efficiently implemented, in a
+stream-wise fashion. The disadvantage is that not every query can be
+re-written in this way.
+
+
+

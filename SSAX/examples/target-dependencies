@@ -1,0 +1,20 @@
+validate-doctype-simple-depend=assert.scm output.scm control.scm srfi-13-local.scm util.scm catch-error.scm ppretty-prints.scm ssax-warn-vanilla.scm char-encoding.scm parser-errors-vanilla.scm define-opt.scm input-parse.scm look-for-str.scm SSAX-code.scm 
+
+parent-pointers-depend=assert.scm ppretty-prints.scm srfi-13-local.scm output.scm SXML-tree-trans.scm char-encoding.scm ssax-warn-vanilla.scm parser-errors-vanilla.scm define-opt.scm input-parse.scm catch-error.scm look-for-str.scm control.scm util.scm SSAX-code.scm SXPath-old.scm 
+
+sxslt-advanced-depend=srfi-13-local.scm util.scm assert.scm SXML-tree-trans.scm output.scm SXML-to-HTML.scm SXML-to-HTML-ext.scm 
+
+sxml-to-sxml-depend=ppretty-prints.scm assert.scm 
+
+sxml-nesting-depth-label-depend=ppretty-prints.scm assert.scm SXML-tree-trans.scm 
+
+pull-punct-sxml-depend=assert.scm output.scm ppretty-prints.scm SXML-tree-trans.scm srfi-13-local.scm util.scm SXML-to-HTML.scm char-encoding.scm ssax-warn-vanilla.scm parser-errors-vanilla.scm define-opt.scm input-parse.scm catch-error.scm look-for-str.scm control.scm SSAX-code.scm 
+
+sxml-db-conv-depend=output.scm ppretty-prints.scm srfi-13-local.scm util.scm assert.scm SXML-tree-trans.scm char-encoding.scm ssax-warn-vanilla.scm parser-errors-vanilla.scm define-opt.scm input-parse.scm catch-error.scm look-for-str.scm control.scm SSAX-code.scm 
+
+apply-templates-depend=assert.scm ppretty-prints.scm output.scm SXML-tree-trans.scm srfi-13-local.scm util.scm SXML-to-HTML.scm SXPath-old.scm 
+
+outline-depend=ppretty-prints.scm char-encoding.scm output.scm ssax-warn-vanilla.scm parser-errors-vanilla.scm define-opt.scm input-parse.scm catch-error.scm assert.scm look-for-str.scm control.scm srfi-13-local.scm util.scm SSAX-code.scm 
+
+remove-markup-depend=ppretty-prints.scm char-encoding.scm output.scm ssax-warn-vanilla.scm parser-errors-vanilla.scm define-opt.scm input-parse.scm catch-error.scm assert.scm look-for-str.scm control.scm srfi-13-local.scm util.scm SSAX-code.scm 
+

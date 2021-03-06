@@ -1,0 +1,293 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE uridef[
+  <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns">
+  <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema">
+  <!ENTITY daml "http://www.daml.org/2001/03/daml+oil">
+  <!ENTITY process "http://www.daml.org/services/daml-s/0.7/Process.daml">
+  <!ENTITY service "http://www.daml.org/services/daml-s/0.7/Service.daml">
+  <!ENTITY profile "http://www.daml.org/services/daml-s/0.7/Profile.daml"> 
+  <!ENTITY profileTaxonomy "http://www.daml.org/services/daml-s/0.7/ProfileTaxonomy.daml"> 
+  <!ENTITY country "http://www.daml.ri.cmu.edu/ont/Country.daml">
+  <!ENTITY concepts "http://www.daml.ri.cmu.edu/ont/DAML-S/concepts.daml">
+  <!ENTITY congoService "http://www.daml.org/services/daml-s/0.7/CongoService.daml">
+  <!ENTITY congoProcess "http://www.daml.org/services/daml-s/0.7/CongoProcess.daml">
+  <!ENTITY time "http://www.ai.sri.com/daml/ontologies/time/Time.daml">
+  <!ENTITY xsd "http://www.w3.org/2000/10/XMLSchema.xsd">
+  <!ENTITY DEFAULT "http://www.daml.org/services/daml-s/0.7/CongoProfile.daml">
+]>
+ 
+<!--
+This document uses entity types as a shorthand for URIs.
+Download the source for a version with unexpanded entities.
+  -->
+ 
+<rdf:RDF
+  xmlns:rdf=     "&rdf;#"
+  xmlns:rdfs=    "&rdfs;#"
+  xmlns:daml=    "&daml;#"
+  xmlns:service= "&service;#"
+  xmlns:process= "&process;#"
+  xmlns:profile= "&profile;#"
+  xmlns:profileTaxonomy= "&profileTaxonomy;#"
+  xmlns:xsd=     "&xsd;#"
+  xmlns:congoService= "&congoService;#"
+  xmlns:congoProcess= "&congoProcess;#"
+  xmlns=         "&DEFAULT;#">
+ 
+  <daml:Ontology about="">
+    <daml:versionInfo>
+      $Id: CongoProfile.daml,v 1.1 2002/11/16 02:24:32 oleg Exp $
+    </daml:versionInfo>
+    <rdfs:comment>
+      DAML-S Coalition: CongoBuy Example for DAML-S release 0.7 Profile description
+ 
+    </rdfs:comment>
+    <daml:imports rdf:resource="&rdf;" />
+    <daml:imports rdf:resource="&rdfs;" />
+    <daml:imports rdf:resource="&daml;" />
+    <daml:imports rdf:resource="&service;" />
+    <daml:imports rdf:resource="&process;" />
+    <daml:imports rdf:resource="&profile;" />
+    <daml:imports rdf:resource="&congoService;" />
+    <daml:imports rdf:resource="&congoProcess;" />
+    <daml:imports rdf:resource="&concepts;" />
+    <daml:imports rdf:resource="&time;" />
+  </daml:Ontology>
+
+  
+  
+  <!-- ################################################################### -->
+  <!-- # Instance Definition of Congo Buy Bookselling Agent               # -->
+  <!-- ################################################################### -->
+
+  <profileTaxonomy:PhysicalProductServiceProfile
+         rdf:ID="Profile_Congo_BookBuying_Service">
+    <!-- Double inheritance: this profile is also an instance of 
+         FeeBasedServiceProfile -->  
+    <rdf:type rdf:resource="&profileTaxonomy;#FeeBasedServiceProfile"/>
+    <!-- reference to the service specification -->  
+    <service:presentedBy rdf:resource="&congoService;#Congo_BookBuying_Agent"/>
+
+    <profile:serviceName>Congo_BookBuying_Agent</profile:serviceName>
+    <profile:textDescription>
+        This agentified service provides the opportunity to browse a
+        book selling site and buy books there
+    </profile:textDescription>
+
+    <profile:contactInformation>      
+      <profile:Actor rdf:ID="CongoBuy_contacts">
+        <profile:name>ExpressCongoBuy</profile:name>
+	<profile:title> Service Representative </profile:title>
+        <profile:phone>412 268 8780 </profile:phone>
+        <profile:fax>412 268 5569 </profile:fax>
+        <profile:email>Bravo@Bravoair.com</profile:email>
+        <profile:physicalAddress>
+            somewhere 2,
+            OnWeb,
+            Montana 52321,
+            USA
+        </profile:physicalAddress>
+        <profile:webURL>
+            http://www.daml.org/services/daml-s/0.7/ExpressCongoBuy.html
+        </profile:webURL>
+      </profile:Actor>
+    </profile:contactInformation>
+    
+    <profileTaxonomy:deliveryRegion rdf:resource="&country;#UnitedStates"/>
+      
+    <!-- specification of quality rating for profile -->
+    <profile:qualityRating>
+      <profile:QualityRating rdf:ID="Congo-Rating">
+	<profile:ratingName>
+	  SomeRating
+	</profile:ratingName>
+	<profile:rating rdf:resource="&concepts;#GoodRating"/>
+      </profile:QualityRating>
+    </profile:qualityRating>
+
+    <profile:input> 
+      <profile:ParameterDescription rdf:ID="BookTitle"> 
+        <profile:parameterName> bookTitle </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&xsd;#string"/>
+        <profile:refersTo rdf:resource="&congoProcess;#bookName"/>
+      </profile:ParameterDescription>
+    </profile:input>
+
+    <profile:input> 
+      <profile:ParameterDescription rdf:ID="SignInInfo"> 
+        <profile:parameterName> signInInfo </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&congoProcess;#SignInData"/>
+        <profile:refersTo rdf:resource="&congoProcess;#signInInfo"/>
+      </profile:ParameterDescription>
+    </profile:input>
+
+    <profile:input> 
+      <profile:ParameterDescription rdf:ID="CreateAcctInfo"> 
+        <profile:parameterName> createAcctInfo </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&congoProcess;#CreateAcct"/>
+        <profile:refersTo rdf:resource="&congoProcess;#createAcctInfo"/>
+      </profile:ParameterDescription>
+    </profile:input>
+
+    <profile:input> 
+      <profile:ParameterDescription rdf:ID="CreditCardNumber"> 
+        <profile:parameterName> creditCardNumber </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&xsd;#decimal"/>
+        <profile:refersTo rdf:resource="&congoProcess;#creditCardNumber"/>
+      </profile:ParameterDescription>
+    </profile:input>
+
+    <profile:input> 
+      <profile:ParameterDescription rdf:ID="CreditCardType"> 
+        <profile:parameterName> creditCardType </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&congoProcess;#CreditCardType"/>
+        <profile:refersTo rdf:resource="&congoProcess;#creditCardType"/>
+      </profile:ParameterDescription>
+    </profile:input>
+
+    <profile:input> 
+      <profile:ParameterDescription rdf:ID="CreditCardExpirationDate"> 
+        <profile:parameterName> creditCardExpirationDate </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&time;#Time"/>
+        <profile:refersTo rdf:resource="&congoProcess;#creditCardExpirationDate"/>
+      </profile:ParameterDescription>
+    </profile:input>
+
+    <profile:input> 
+      <profile:ParameterDescription rdf:ID="DeliveryAddress"> 
+        <profile:parameterName> deliveryAddress </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&xsd;#string"/>
+        <profile:refersTo rdf:resource="&congoProcess;#deliveryAddress"/>
+      </profile:ParameterDescription>
+    </profile:input>
+
+    <profile:input> 
+      <profile:ParameterDescription rdf:ID="PackagingSelection"> 
+        <profile:parameterName> packagingSelection </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&congoProcess;#PackagingType"/>
+        <profile:refersTo rdf:resource="&congoProcess;#packagingSelection"/>
+      </profile:ParameterDescription>
+    </profile:input>
+
+    <profile:input> 
+      <profile:ParameterDescription rdf:ID="DeliveryType"> 
+        <profile:parameterName> DeliveryType </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&congoProcess;#DeliveryType"/>
+        <profile:refersTo rdf:resource="&congoProcess;#DeliveryType"/>
+      </profile:ParameterDescription>
+    </profile:input>
+
+    
+    <profile:output> 
+      <profile:ParameterDescription rdf:ID="EReceipt"> 
+        <profile:parameterName> EReceipt </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&congoProcess;#EReceipt"/>
+        <profile:refersTo rdf:resource="&congoProcess;#congoBuyReceipt"/>
+      </profile:ParameterDescription>
+    </profile:output>
+
+    <profile:output> 
+      <profile:ParameterDescription rdf:ID="ShippingOrder"> 
+        <profile:parameterName> ShippingOrder </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&congoProcess;#ShippingOrder"/>
+        <profile:refersTo rdf:resource="&congoProcess;#congoBuyShippingOrder"/>
+      </profile:ParameterDescription>
+    </profile:output>
+    
+    <profile:output> 
+      <profile:ParameterDescription rdf:ID="AccountType"> 
+        <profile:parameterName> AccountType </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&congoProcess;#CreateAcctOutputType"/>
+        <profile:refersTo rdf:resource="&congoProcess;#createAcctOutput"/>
+      </profile:ParameterDescription>
+    </profile:output>
+
+    <!-- Preconditions -->
+   
+    <profile:precondition> 
+      <profile:ParameterDescription rdf:ID="AcctExists"> 
+        <profile:parameterName> AcctExists </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&congoProcess;#AcctExists"/>
+        <profile:refersTo rdf:resource="&congoProcess;#congoBuyAcctExistsPrecondition"/>
+      </profile:ParameterDescription>
+    </profile:precondition>
+    
+    <profile:precondition> 
+      <profile:ParameterDescription rdf:ID="CreditExists"> 
+        <profile:parameterName> CreditExists </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&congoProcess;#CreditExists"/>
+        <profile:refersTo rdf:resource="&congoProcess;#congoBuyCreditExistsPrecondition"/>
+      </profile:ParameterDescription>
+    </profile:precondition>
+    
+    <profile:effect> 
+      <profile:ParameterDescription rdf:ID="BuyEffectType"> 
+        <profile:parameterName> BuyEffectType </profile:parameterName>
+        <profile:restrictedTo rdf:resource="&congoProcess;#BuyEffectType"/>
+        <profile:refersTo rdf:resource="&congoProcess;#congoBuyEffect"/>
+      </profile:ParameterDescription>
+    </profile:effect>
+    
+  </profileTaxonomy:PhysicalProductServiceProfile>
+ 
+  
+  <!-- ################################################################### -->
+  <!-- # Instance Definition of Full Congo BookSelling Agent             # -->
+  <!-- ################################################################### -->
+
+  <!-- This profile is essentially the same as above, only this refers
+    to the full process model -->
+  
+  <profileTaxonomy:PhysicalProductServiceProfile
+          rdf:ID="Profile_Full_Congo_BookBuying_Service">
+    <!-- reference to the service specification -->  
+    <service:presentedBy rdf:resource="&congoService;#Congo_BookBuying_Agent"/>
+
+    <profile:serviceName>Congo_BookBuying_Agent</profile:serviceName>
+    <profile:textDescription>
+        This agentified service provides the opportunity to browse a
+        book selling site and buy books there
+    </profile:textDescription>
+
+    <profile:contactInformation rdf:resource="CongoBuy_contacts"/>
+      
+    <profileTaxonomy:deliveryRegion rdf:resource="&country;#UnitedStates"/>    
+    
+    <!-- specification of quality rating for profile -->
+    <profile:qualityRating rdf:resource="Congo-Rating"/>
+
+    <profile:input rdf:resource="BookTitle"/> 
+
+    <profile:input rdf:resource="SignInInfo"/> 
+
+    <profile:input rdf:resource="CreateAcctInfo"/> 
+
+    <profile:input rdf:resource="CreditCardNumber"/> 
+
+    <profile:input rdf:resource="CreditCardType"/> 
+
+    <profile:input rdf:resource="CreditCardExpirationDate"/> 
+
+    <profile:input rdf:resource="DeliveryAddress"/> 
+
+    <profile:input rdf:resource="PackagingSelection"/> 
+
+    <profile:input rdf:resource="DeliveryType"/> 
+
+    
+    <profile:output rdf:resource="EReceipt"/> 
+
+    <profile:output rdf:resource="ShippingOrder"/> 
+    
+    <profile:output rdf:resource="AccountType"/> 
+
+    <!-- Preconditions -->
+   
+    <profile:precondition rdf:resource="AcctExists"/> 
+    
+    <profile:precondition rdf:resource="CreditExists"/> 
+    
+    <profile:effect rdf:resource="BuyEffectType"/> 
+    
+  </profileTaxonomy:PhysicalProductServiceProfile>
+</rdf:RDF>

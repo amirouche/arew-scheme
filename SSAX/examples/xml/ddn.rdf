@@ -1,0 +1,35 @@
+<?xml version="1.0"?><rdf:RDF
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+xmlns="http://my.netscape.com/rdf/simple/0.9/">
+
+	<channel>
+		<title>Daily Daemon News</title>
+		<link>http://daily.daemonnews.org</link>
+		<description>Daemon News PHP News System</description>
+	</channel>
+
+	<item>
+		<title>General Software Demonstrates 0.8sec BIOS Boot Time</title> 
+ <link>http://daily.daemonnews.org/view_story.php3?story_id=2335</link>
+	</item>
+
+	<item>
+		<title>Building Raid-10 On NetBSD</title> 
+ <link>http://daily.daemonnews.org/view_story.php3?story_id=2334</link>
+	</item>
+
+	<item>
+		<title>Is open source closing doors?</title> 
+ <link>http://daily.daemonnews.org/view_story.php3?story_id=2333</link>
+	</item>
+
+	<item>
+		<title>Dennis Ritchie is talking about linux...</title> 
+ <link>http://daily.daemonnews.org/view_story.php3?story_id=2330</link>
+	</item>
+
+	<item>
+		<title>MozillaQuest.com: Mozilla 1.0 Set Back to 2002 - Mozilla 0.9.4 Set for 7 September</title> 
+ <link>http://daily.daemonnews.org/view_story.php3?story_id=2331</link>
+	</item>
+</rdf:RDF>
