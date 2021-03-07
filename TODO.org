@@ -1,0 +1,13 @@
+* letloop
+** approximate string matching
+*** parsing
+*** two gram character
+*** product
+*** one-hot encoder
+***
+** approximate mutiple entities matching
+** d11n
+*** r7rs-small
+*** srfi
+*** bibliography
+** search

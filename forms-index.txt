@@ -1,0 +1,1849 @@
+## `(read [port])`
+## `(delay exp)`
+## `(force promise)`
+## `(delay-force exp)`
+## `(promise? obj)`
+## `(make-promise exp)`
+## `(make-list-queue list [ last ])`
+## `(list-queue element ...)`
+## `(list-queue-copy list-queue)`
+## `(list-queue-unfold stop? mapper successor seed [ queue ])`
+## `(list-queue-unfold-right stop? mapper successor seed [ queue ])`
+## `(list-queue? obj)`
+## `(list-queue-empty? list-queue)`
+## `(list-queue-front list-queue)`
+## `(list-queue-back list-queue)`
+## `(list-queue-list list-queue)`
+## `(list-queue-first-last list-queue)`
+## `(list-queue-add-front! list-queue element)`
+## `(list-queue-add-back! list-queue element)`
+## `(list-queue-remove-front! list-queue)`
+## `(list-queue-remove-back! list-queue)`
+## `(list-queue-remove-all! list-queue)`
+## `(list-queue-set-list! list-queue list [ last ])`
+## `(list-queue-append list-queue ...)`
+## `(list-queue-append! list-queue ...)`
+## `(list-queue-concatenate list-of-list-queues)`
+## `(list-queue-map proc list-queue)`
+## `(list-queue-map! proc list-queue)`
+## `(list-queue-for-each proc list-queue)`
+## `(ephemeron? obj)`
+## `(make-ephemeron key datum)`
+## `(ephemeron-broken? ephemeron)`
+## `(ephemeron-key ephemeron)`
+## `(ephemeron-value ephemeron)`
+## `(reference-barrier key)`
+## `_`
+## `...`
+## `=>`
+## `else`
+## `(* number ...)`
+## `(+ number ...)`
+## `(- number ...)`
+## `(/ number ...)`
+## `(< number number ...)`
+## `(<= number number ...)`
+## `(= number number ...)`
+## `(> number number ...)`
+## `(>= number number ...)`
+## `(abs number)`
+## `(and test1 ...)`
+## `(append lst ...)`
+## `(apply proc arg1 ... args)`
+## `(assoc obj alist)`
+## `(assq obj alist)`
+## `(assv obj alist)`
+## `begin` syntax
+## `binary-port?`
+## `(boolean=? obj ...)`
+## `(boolean? obj)`
+## `(bytevector byte ...)`
+## `(bytevector-append bytevector ...)`
+## `(bytevector-copy bytevector [start [end]])`
+## `(bytevector-copy! to at from [start [end]])`
+## `(bytevector-length bytevector)`
+## `bytevector-u8-ref`
+## `bytevector-u8-set!`
+## `(bytevector? obj)`
+## `caar`
+## `cadr`
+## `(call-with-current-continuation proc)`
+## `(call-with-port port proc)`
+## `(call-with-values producer consumer)`
+## `(call/cc proc)`
+## `(car pair)`
+## `(case <key> <clause1> <clause2> ...)` syntax
+## `cdar`
+## `cddr`
+## `cdr`
+## `(ceiling x)`
+## `(char->integer char)`
+## `(char-ready? [port])`
+## `char<=?`
+## `char<?`
+## `char=?`
+## `char>=?`
+## `char>?`
+## `char?`
+## `(close-input-port port)`
+## `(close-output-port port)`
+## `(close-port port)`
+## `(complex? obj)`
+## `(cond <clause1> ...)`
+## `cond-expand`
+## `(cons obj1 obj2)`
+## `(current-error-port [port])`
+## `(current-input-port [port])`
+## `current-output-port`
+## `(define <name> <expr>)`
+## `(define (<name> <variable> ...) <expr> ...)`
+## `define-record-type` syntax
+## `define-syntax`
+## `(define-values var1 ... expr)` syntax
+## `(denominator q)`
+## `do`
+## `(dynamic-wind before thunk after)`
+## `(eof-object)`
+## `(eof-object? obj)`
+## `(eq? obj1 obj2)`
+## `(equal? obj1 obj2)`
+## `(eqv? obj1 obj2)`
+## `(error [who] message . irritants)`
+## `(error-object-irritants error)`
+## `(error-object-message error)`
+## `(error-object? obj)`
+## `(even? number)`
+## `(exact z)`
+## `(exact-integer-sqrt k)`
+## `(exact-integer? z)`
+## `(exact? z)`
+## `(expt z1 z2)`
+## `features`
+## `(file-error? error)`
+## `(floor x)`
+## `floor-quotient`
+## `floor-remainder`
+## `floor/`
+## `(flush-output-port [port])`
+## `(for-each proc list1 ...)`
+## `(gcd n1 ...)`
+## `(get-output-bytevector port)`
+## `(get-output-string port)`
+## `(guard <clause> ...)` syntax
+## `(if <expr> <then> [<else>])`
+## `include`
+## `include-ci`
+## `(inexact z)`
+## `(inexact? z)`
+## `(input-port-open? port)`
+## `(input-port? obj)`
+## `(integer->char integer)`
+## `(integer? obj)`
+## `(lambda <formals> <expr> ...)`
+## `(lcm n1 ...)`
+## `(length list)`
+## `let`
+## `let*`
+## `let*-values`
+## `let-syntax`
+## `let-values`
+## `letrec`
+## `letrec*`
+## `letrec-syntax`
+## `(list obj ...)`
+## `(list->string list)`
+## `(list->vector list)`
+## `(list-copy obj)`
+## `(list-ref list k)`
+## `(list-set! list k obj)`
+## `(list-tail list k)`
+## `(list? obj)`
+## `(make-bytevector k [byte])`
+## `(make-list k [fill])`
+## `(make-parameter init [converter])`
+## `(make-string k [char])`
+## `(make-vector k [fill])`
+## `(map proc list1 ...)`
+## `(max x1 ...)`
+## `(member obj list [compare])`
+## `(memq obj list)`
+## `(memv obj list)`
+## `(min x1 ...)`
+## `(modulo n1 n2)`
+## `(negative? x)`
+## `(newline [port])`
+## `(not obj)`
+## `(null? obj)`
+## `(number->string z [radix])`
+## `(number? obj)`
+## `(numerator q)`
+## `(odd? number)`
+## `(open-input-bytevector bytevector)`
+## `(open-input-string string)`
+## `(open-output-bytevector)`
+## `(open-output-string)`
+## `(or test1 ...)` syntax
+## `(output-port-open? port)`
+## `(output-port? obj)`
+## `(pair? obj)`
+## `(parameterize ((param1 value1) ...) expr ...)`
+## `(peek-char [port])`
+## `(peek-u8 [port])`
+## `(port? obj)`
+## `(positive? x)`
+## `(procedure? obj)`
+## `quasiquote`
+## `quote`
+## `quotient`
+## `(raise obj)`
+## `(raise-continuable obj)`
+## `(rational? obj)`
+## `(rationalize x y)`
+## `(read-bytevector k [port])`
+## `(read-bytevector! bytevector [port [start [end]]])`
+## `(read-char [port])`
+## `(read-error? obj)`
+## `(read-line [port])`
+## `(read-string k [port])`
+## `(read-u8 [port])`
+## `(real? obj)`
+## `(remainder n1 n2)`
+## `(reverse list)`
+## `(round x)`
+## `(set! <variable> <expression>)` syntax
+## `(set-car! pair obj)`
+## `(set-cdr! pair obj)`
+## `(square z)`
+## `(string char ...)`
+## `(string->list string [start [end]])`
+## `(string->number string [radix])`
+## `(string->symbol string)`
+## `(string->utf8 string [start [end]])`
+## `(string->vector string [start [end]])`
+## `(string-append string ...)`
+## `(string-copy string [start [end]])`
+## `(string-copy! to at from [start [end]])`
+## `(string-fill! string fill [start [end]])`
+## `(string-for-each proc string1 ...)`
+## `(string-length string)`
+## `(string-map proc string1 ...)`
+## `(string-ref string k)`
+## `(string-set! string k char)`
+## `string<=?`
+## `string<?`
+## `(string=? string1 string2 ...)`
+## `string>=?`
+## `string>?`
+## `(string? obj)`
+## `(substring string start end)`
+## `(symbol->string symbol)`
+## `(symbol=? symbol1 symbol2 ...)`
+## `(symbol? obj)`
+## `syntax-error`
+## `syntax-rules`
+## `textual-port?`
+## `(truncate x)`
+## `truncate-quotient`
+## `truncate-remainder`
+## `truncate/`
+## `(u8-ready? [port])`
+## `(unless <test> <expr> ...)` syntax
+## `unquote`
+## `unquote-splicing`
+## `(utf8->string bytevector [start [end]])`
+## `(values obj ...)`
+## `(vector obj ...)`
+## `(vector->list vector [start [end]])`
+## `(vector->string vector [start [end]])`
+## `(vector-append vector ...)`
+## `(vector-copy vector [start [end]])`
+## `(vector-copy! to at from [start [end]])`
+## `(vector-fill! vector fill [start [end]])`
+## `(vector-for-each proc vector1 ...)`
+## `(vector-length vector)`
+## `(vector-map proc vector1 ...)`
+## `(vector-ref vector k)`
+## `(vector-set! vector k obj)`
+## `vector?`
+## `(when <test> <expr> ...)` syntax
+## `with-exception-handler`
+## `(write-bytevector bytevector [port [start [end]]])`
+## `(write-char char [port])`
+## `(write-string string [port [start [end]]])`
+## `(write-u8 byte [port])`
+## `(zero? z)`
+## `(environment list1 ...)`
+## `(eval expr-or-def environment-specifier)`
+## `(mapping comparator [key value] ...)`
+## `(mapping-unfold stop? mapper successor seed comparator)`
+## `(mapping/ordered)`
+## `(mapping-unfold/ordered`
+## `(mapping? obj)`
+## `(mapping-contains? mapping key)`
+## `(mapping-empty? mapping)`
+## `(mapping-disjoint? mapping1 mapping2)`
+## `(mapping-ref mapping key [failure [success]])`
+## `(mapping-ref/default mapping key default)`
+## `(mapping-key-comparator mapping)`
+## `(mapping-adjoin mapping arg ...)`
+## `(mapping-adjoin! mapping arg ...)`
+## `(mapping-set mapping arg ...)`
+## `(mapping-set! mapping arg ...)`
+## `(mapping-replace mapping key value)`
+## `(mapping-replace! mapping key value)`
+## `(mapping-delete mapping key ...)`
+## `(mapping-delete! mapping key ...)`
+## `(mapping-delete-all mapping key-list)`
+## `(mapping-delete-all! mapping key-list)`
+## `(mapping-intern mapping key failure)`
+## `(mapping-intern! mapping key failure)`
+## `(mapping-update mapping key updater [failure [success]])`
+## `(mapping-update! mapping key updater [failure [success]])`
+## `(mapping-update/default mapping key updater default)`
+## `(mapping-update!/default mapping key updater default)`
+## `(mapping-pop mapping [failure])`
+## `(mapping-pop! mapping [failure])`
+## `(mapping-search mapping key failure success)`
+## `(mapping-search! mapping key failure success)`
+## `(mapping-size mapping)`
+## `(mapping-find predicate mapping failure)`
+## `(mapping-count predicate mapping)`
+## `(mapping-any? predicate mapping)`
+## `(mapping-every? predicate mapping)`
+## `(mapping-keys mapping)`
+## `(mapping-values mapping)`
+## `(mapping-entries mapping)`
+## `(mapping-map proc comparator mapping)`
+## `(mapping-map->list proc mapping)`
+## `(mapping-for-each proc mapping)`
+## `(mapping-fold proc nil mapping)`
+## `(mapping-filter predicate mapping)`
+## `(mapping-filter! predicate mapping)`
+## `(mapping-remove predicate mapping)`
+## `(mapping-remove! predicate mapping)`
+## `(mapping-partition predicate mapping)`
+## `(mapping-partition! predicate mapping)`
+## `(mapping-copy mapping)`
+## `(mapping->alist mapping)`
+## `(alist->mapping comparator alist)`
+## `(alist->mapping! mapping alist)`
+## `(mapping=? comparator mapping1 mapping2 ...)`
+## `(mapping<? comparator mapping1 mapping2 ...)`
+## `(mapping>? comparator mapping1 mapping2 ...)`
+## `(mapping<=? comparator mapping1 mapping2 ...)`
+## `(mapping>=? comparator mapping1 mapping2 ...)`
+## `(mapping-union mapping1 mapping2 ...)`
+## `(mapping-intersection mapping1 mapping2 ...)`
+## `(mapping-difference mapping1 mapping2 ...)`
+## `(mapping-xor mapping1 mapping2 ...)`
+## `(mapping-union! mapping1 mapping2 ...)`
+## `(mapping-intersection! mapping1 mapping2 ...)`
+## `(mapping-difference! mapping1 mapping2 ...)`
+## `(mapping-xor! mapping1 mapping2 ...)`
+## `(mapping-min-key mapping)`
+## `(mapping-max-key mapping)`
+## `(mapping-min-value mapping)`
+## `(mapping-max-value mapping)`
+## `(mapping-min-entry mapping)`
+## `(mapping-max-entry mapping)`
+## `(mapping-key-predecessor mapping obj failure)`
+## `(mapping-key-successor mapping obj failure)`
+## `(mapping-range= mapping obj)`
+## `(mapping-range< mapping obj)`
+## `(mapping-range> mapping obj)`
+## `(mapping-range<= mapping obj)`
+## `(mapping-range>= mapping obj)`
+## `(mapping-range=! mapping obj)`
+## `(mapping-range<! mapping obj)`
+## `(mapping-range>! mapping obj)`
+## `(mapping-range<=! mapping obj)`
+## `(mapping-range>=! mapping obj)`
+## `(mapping-split mapping obj)`
+## `(mapping-split! mapping obj)`
+## `(mapping-catenate comparator mapping1 key value mapping2)`
+## `(mapping-catenate! comparator mapping1 key value mapping2)`
+## `(mapping-map/monotone proc comparator mapping)`
+## `(mapping-map/monotone! proc comparator mapping)`
+## `(mapping-fold/reverse proc nil mapping)`
+## `(comparator? obj)`
+## `mapping-comparator`
+## `(make-mapping-comparator comparator)`
+## `stream-null`
+## `(stream-cons object stream)`
+## `(stream? object)`
+## `(stream-null? object)`
+## `(stream-pair? object)`
+## `(stream-car stream)`
+## `(stream-cdr stream)
+## `(stream-lambda args body)`
+## `(define-stream (name args) body)` syntax
+## `(list->stream list-of-objects)`
+## `(port->stream [port])`
+## `(stream object ...)`
+## `(stream->list [n] stream)`
+## `(stream-append stream ...)`
+## `(stream-concat stream)`
+## `(stream-constant object ...)`
+## `(stream-drop n stream) procedure`
+## `(stream-drop-while pred? stream)`
+## `(stream-filter pred? stream)`
+## `(stream-fold proc base stream)`
+## `(stream-for-each proc stream ...)`
+## `(stream-from first [step])`
+## `(stream-iterate proc base)`
+## `(stream-length stream)`
+## `(stream-let tag ((var expr) ...) body)` syntax
+## `(stream-map proc stream ...)`
+## `(stream-match stream clause ...)` syntax
+## `(stream-of expr clause ...)` syntax
+## `(stream-range first past [step])`
+## `(stream-ref stream n)`
+## `(stream-reverse stream)`
+## `(stream-scan proc base stream)`
+## `(stream-take n stream)`
+## `(stream-take-while pred? stream)`
+## `(stream-unfold map pred? gen base)`
+## `(stream-unfolds proc seed)`
+## `(stream-zip stream ...)`
+## `(comparator? obj)`
+## `(comparator-comparison-procedure? comparator)`
+## `(comparator-hash-function? comparator)`
+## `boolean-comparator`
+## `char-comparator`
+## `char-ci-comparator`
+## `string-comparator`
+## `string-ci-comparator`
+## `symbol-comparator`
+## `exact-integer-comparator`
+## `integer-comparator`
+## `rational-comparator`
+## `real-comparator`
+## `complex-comparator`
+## `number-comparator`
+## `pair-comparator`
+## `list-comparator`
+## `vector-comparator`
+## `bytevector-comparator`
+## `default-comparator`
+## `(make-comparator type-test equality compare hash)`
+## `(make-inexact-real-comparator epsilon rounding nan-handling)`
+## `(make-list-comparator element-comparator)`
+## `(make-vector-comparator element-comparator)`
+## `(make-bytevector-comparator element-comparator)`
+## `(make-listwise-comparator type-test element-comparator empty? head tail)`
+## `(make-vectorwise-comparator type-test element-comparator length ref)`
+## `(make-car-comparator comparator)`
+## `(make-cdr-comparator comparator)`
+## `(make-pair-comparator car-comparator cdr-comparator)`
+## `(make-improper-list-comparator element-comparator)`
+## `(make-selecting-comparator comparator1 comparator2 ...)`
+## `(make-refining-comparator comparator1 comparator2 ...)`
+## `(make-reverse-comparator comparator)`
+## `(make-debug-comparator comparator)`
+## `eq-comparator`
+## `eqv-comparator`
+## `equal-comparator`
+## `(comparator-type-test-procedure comparator)`
+## `(comparator-equality-predicate comparator)`
+## `(comparator-comparison-procedure comparator)`
+## `(comparator-hash-function comparator)`
+## `(comparator-test-type comparator obj)`
+## `(comparator-check-type comparator obj)`
+## `(comparator-equal? comparator obj1 obj2)`
+## `(comparator-compare comparator obj1 obj2)`
+## `(comparator-hash comparator obj)`
+## `(make-comparison< lt-pred)`
+## `(make-comparison> gt-pred)`
+## `(make-comparison<= le-pred)`
+## `(make-comparison>= ge-pred)`
+## `(make-comparison=/< eq-pred lt-pred)`
+## `(make-comparison=/> eq-pred gt-pred)`
+## `(if3 <expr> <less> <equal> <greater>)`
+## `(if=? <expr> <consequent> [ <alternate> ])`
+## `(if<? <expr> <consequent> [ <alternate> ])`
+## `(if>? <expr> <consequent> [ <alternate> ])`
+## `(if<=? <expr> <consequent> [ <alternate> ])`
+## `(if>=? <expr> <consequent> [ <alternate> ])`
+## `(if-not=? <expr> <consequent> [ <alternate> ])`
+## `(=? comparator object1 object2 object3 ...)`
+## `(<? comparator object1 object2 object3 ...)`
+## `(>? comparator object1 object2 object3 ...)`
+## `(<=? comparator object1 object2 object3 ...)`
+## `(>=? comparator object1 object2 object3 ...)`
+## `(make=? comparator)`
+## `(make<? comparator)`
+## `(make>? comparator)`
+## `(make<=? comparator)`
+## `(make>=? comparator)`
+## `(in-open-interval? [comparator] obj1 obj2 obj3)`
+## `(in-closed-interval? [comparator] obj1 obj2 obj3)`
+## `(in-open-closed-interval? [comparator] obj1 obj2 obj3)`
+## `(in-closed-open-interval? [comparator] obj1 obj2 obj3)`
+## `(comparator-min comparator object1 object2 ...)`
+## `(comparator-max comparator object1 object2 ...)`
+## `(bitwise-not i)`
+## `(bitwise-and i ...)`
+## `(bitwise-ior i ...)`
+## `(bitwise-xor i ...)`
+## `(bitwise-eqv i ...)`
+## `(bitwise-nand i j)`
+## `(bitwise-nor i j)`
+## `(bitwise-andc1 i j)`
+## `(bitwise-andc2 i j)`
+## `(bitwise-orc1 i j)`
+## `(bitwise-orc2 i j)`
+## `(arithmetic-shift i count)`
+## `(bit-count i)`
+## `(integer-length i)`
+## `(bitwise-if mask i j)`
+## `(bit-set? index i)`
+## `(copy-bit index i boolean)`
+## `(bit-swap index1 index2 i)`
+## `(any-bit-set? test-bits i)`
+## `(every-bit-set? test-bits i)`
+## `(first-set-bit i)`
+## `(bit-field i start end)`
+## `(bit-field-any? i start end)`
+## `(bit-field-every? i start end)`
+## `(bit-field-clear i start end)`
+## `(bit-field-set i start end)`
+## `(bit-field-replace dest source start end)`
+## `(bit-field-replace-same dest source start end)`
+## `(bit-field-rotate i count start end)`
+## `(bit-field-reverse i start end)`
+## `(bits->list i [ len ])`
+## `(bits->vector i [ len ])`
+## `(list->bits list)`
+## `(vector->bits vector)`
+## `(bits bool ...)`
+## `(bitwise-fold proc seed i)`
+## `(bitwise-for-each proc i)`
+## `(bitwise-unfold stop? mapper successor seed)`
+## `(make-bitwise-generator i)`
+## `(case-lambda <clause1> ...)` syntax
+## `(regexp re)`
+## `(rx sre ...)`
+## `(regexp->sre re)`
+## `(char-set->sre char-set)`
+## `(valid-sre? obj)`
+## `(regexp? obj)`
+## `(regexp-matches re str [start [end]])`
+## `(regexp-matches? re str [start [end]])`
+## `(regexp-search re str [start [end]])`
+## `(regexp-fold re kons knil str [finish [start [end]]])`
+## `(regexp-extract re str [start [end]])`
+## `(regexp-split re str [start [end]])`
+## `(regexp-partition re str [start [end]])`
+## `(regexp-replace re str subst [start [end [count]])`
+## `(regexp-replace-all re str subst [start [end]])`
+## `(regexp-match? obj)`
+## `(regexp-match-count regexp-match)`
+## `(regexp-match-submatch regexp-match field)`
+## `(regexp-match-submatch-start regexp-match field)`
+## `(regexp-match-submatch-end regexp-match field)`
+## `(regexp-match->list regexp-match)`
+## SRE Syntax
+## `<string>`
+## `(seq sre ...)`
+## `(: sre ...)`
+## `(or sre ...)`
+## `(|\|| sre ...)`
+## `(w/nocase sre ...)`
+## `(w/case sre ...)`
+## `(w/ascii sre ...)`
+## `(w/unicode sre ...)`
+## `(w/nocapture sre ...)`
+## `(optional sre ...)`
+## `(? sre ...)`
+## `(zero-or-more sre ...)`
+## `(* sre ...)`
+## `(one-or-more sre ...)`
+## `(+ sre ...)`
+## `(at-least n sre ...)`
+## `(>= n sre ...)`
+## `(exactly n sre ...)`
+## `(= n sre ...)`
+## `(repeated from to sre ...)`
+## `(** from to sre ...)`
+## `(submatch sre ...)`
+## `($ sre ...)`
+## `(submatch-named name sre ...)`
+## `(-> name sre ...)`
+## `(backref n-or-name)`
+## `<char>`
+## `"<char>"`
+## `<char-set>`
+## `(char-set <string>)`
+## `(<string>)`
+## `(char-range <range-spec> ...)`
+## `(/ <range-spec> ...)`
+## `(or <cset-sre> ...)`
+## `(|\|| <cset-sre> ...)`
+## `(complement <cset-sre> ...)`
+## `(~ <cset-sre> ...)`
+## `(difference <cset-sre> ...)`
+## `(- <cset-sre> ...)`
+## `(and <cset-sre> ...)`
+## `(& <cset-sre> ...)`
+## `any`
+## `nonl`
+## `ascii`
+## `lower-case`
+## `lower`
+## `upper-case`
+## `upper`
+## `title-case`
+## `title`
+## `alphabetic`
+## `alpha`
+## `numeric`
+## `num`
+## `alphanumeric`
+## `alphanum`
+## `alnum`
+## `punctuation`
+## `punct`
+## `symbol`
+## `graphic`
+## `graph`
+## `whitespace`
+## `white`
+## `space`
+## `printing`
+## `print`
+## `control`
+## `cntrl`
+## `hex-digit`
+## `xdigit`
+## `bos`
+## `eos`
+## `bol`
+## `eol`
+## `bow`
+## `eow`
+## `nwb`
+## `(word sre ...)`
+## `(word+ cset-sre ...)`
+## `word`
+## `bog`
+## `eog`
+## `grapheme`
+## `(non-greedy-optional sre ...)`
+## `(?? sre ...)`
+## `(non-greedy-zero-or-more< sre ...)`
+## `(*? sre ...)`
+## `(non-greedy-repeated m n sre ...)`
+## `(**? m n sre ...)`
+## `(look-ahead sre ...)`
+## `(look-behind sre ...)`
+## `(neg-look-ahead sre ...)`
+## `(neg-look-behind sre ...)`
+## `(endianness <endianess symbol>)` syntax
+## `(native-endianness)`
+## `(bytevector? obj)`
+## `(make-bytevector k [fill])`
+## `(bytevector-length bytevector)`
+## `(bytevector=? bytevector1 bytevector2)`
+## `(bytevector-fill! bytevector fill)`
+## `(bytevector-copy! source source-start‌‌ target target-start k)`
+## `(bytevector-copy bytevector)‌‌`
+## `(bytevector-u8-ref bytevector k)‌‌`
+## `(bytevector-s8-ref bytevector k)‌‌`
+## `(bytevector-u8-set! bytevector k octet)‌‌`
+## `(bytevector-s8-set! bytevector k byte)‌‌`
+## `(bytevector->u8-list bytevector)‌‌`
+## `(u8-list->bytevector list)‌‌`
+## `(bytevector-uint-ref bytevector k endianness size)‌‌`
+## `(bytevector-sint-ref bytevector k endianness size)‌‌`
+## `(bytevector-uint-set! bytevector k n endianness size)‌‌`
+## `(bytevector-sint-set! bytevector k n endianness size)‌‌`
+## `(bytevector->uint-list bytevector endianness size)‌‌`
+## `(bytevector->sint-list bytevector endianness sizee‌‌`
+## `(uint-list->bytevector list endianness size)‌‌`
+## `(sint-list->bytevector list endianness size)‌‌`
+## `(bytevector-u16-ref bytevector k endianness)‌‌`
+## `(bytevector-s16-ref bytevector k endianness)‌‌`
+## `(bytevector-u16-native-ref bytevector k)‌‌`
+## `(bytevector-s16-native-ref bytevector k)‌‌`
+## `(bytevector-u16-set! bytevector k n endianness)‌‌`
+## `(bytevector-s16-set! bytevector k n endianness)‌‌`
+## `(bytevector-u16-native-set! bytevector k n)‌‌`
+## `(bytevector-s16-native-set! bytevector k n)‌‌`
+## `(bytevector-u32-ref bytevector k endianness)‌‌`
+## `(bytevector-s32-ref bytevector k endianness)‌‌`
+## `(bytevector-u32-native-ref bytevector k)‌‌`
+## `(bytevector-s32-native-ref bytevector k)‌‌`
+## `(bytevector-u32-set! bytevector k n endianness)‌‌`
+## `(bytevector-s32-set! bytevector k n endianness)‌‌`
+## `(bytevector-u32-native-set! bytevector k n)‌‌`
+## `(bytevector-s32-native-set! bytevector k n)‌‌`
+## `(bytevector-u64-ref bytevector k endianness)‌‌`
+## `(bytevector-s64-ref bytevector k endianness)‌‌`
+## `(bytevector-u64-native-ref bytevector k)‌‌`
+## `(bytevector-s64-native-ref bytevector k)‌‌`
+## `(bytevector-u64-set! bytevector k n endianness)‌‌`
+## `(bytevector-s64-set! bytevector k n endianness)‌‌`
+## `(bytevector-u64-native-set! bytevector k n)‌‌`
+## `(bytevector-s64-native-set! bytevector k n)‌‌`
+## `(bytevector-ieee-single-native-ref bytevector k)‌‌`
+## `(bytevector-ieee-single-ref bytevector k endianness)‌‌`
+## `(bytevector-ieee-double-native-ref bytevector k)‌‌`
+## `(bytevector-ieee-double-ref bytevector k endianness)‌‌`
+## `(bytevector-ieee-single-native-set! bytevector k x)‌‌`
+## `(bytevector-ieee-single-set! bytevector ‌k x endianness)`
+## `(bytevector-ieee-double-native-set! bytevector k x)‌‌`
+## `(bytevector-ieee-double-set! bytevector k x endianness)‌`
+## `(string->utf8 string)‌‌`
+## `(string->utf16 string)‌‌`
+## `(string->utf16 string endianness)‌‌`
+## `(string->utf32 string)‌‌`
+## `(string->utf32 string endianness)‌‌`
+## `(utf8->string bytevector)‌‌`
+## `(utf16->string bytevector endianness)‌‌`
+## `(utf16->string bytevector‌ endianness endianness-mandatory)`
+## `(utf32->string bytevector endianness)‌‌`
+## `(utf32->string bytevector‌ endianness endianness-mandatory)`
+## `(set comparator element ... )`
+## `(set-unfold comparator stop? mapper successor seed)`
+## `(set? obj)`
+## `(set-contains? set element)`
+## `(set-empty? set)`
+## `(set-disjoint? set1 set2)`
+## `(set-member set element default)`
+## `(set-element-comparator set)`
+## `(set-adjoin set element ...)`
+## `(set-adjoin! set element ...)`
+## `(set-replace set element)`
+## `(set-replace! set element)`
+## `(set-delete set element ...)`
+## `(set-delete! set element ...)`
+## `(set-delete-all set element-list)`
+## `(set-delete-all! set element-list)`
+## `(set-search! set element failure success)`
+## `(set-size set)`
+## `(set-find predicate set failure)`
+## `(set-count predicate set)`
+## `(set-any? predicate set)`
+## `(set-every? predicate set)`
+## `(set-map comparator proc set)`
+## `(set-for-each proc set)`
+## `(set-fold proc nil set)`
+## `(set-filter predicate set)`
+## `(set-filter! predicate set)`
+## `(set-remove predicate set)`
+## `(set-remove! predicate set)`
+## `(set-partition predicate set)`
+## `(set-partition! predicate set)`
+## `(set-copy set)`
+## `(set->list set)`
+## `(list->set comparator list)`
+## `(list->set! set list)`
+## `(set=? set1 set2 ...)`
+## `(set<? set1 set2 ...)`
+## `(set>? set1 set2 ...)`
+## `(set<=? set1 set2 ...)`
+## `(set>=? set1 set2 ...)`
+## `(set-union set1 set2 ...)`
+## `(set-intersection set1 set2 ...)`
+## `(set-difference set1 set2 ...)`
+## `(set-xor set1 set2)`
+## `(set-union! set1 set2 ...)`
+## `(set-intersection! set1 set2 ...)`
+## `(set-difference! set1 set2 ...)`
+## `(set-xor! set1 set2)`
+## `(bag comparator element ...)`
+## `(bag-unfold ...)`
+## `(bag? obj)`
+## `(bag-contains? ...)`
+## `(bag-empty? obj)`
+## `(bag-disjoint? ...)`
+## `(bag-member ...)`
+## `(bag-element-comparator ...)
+## `(bag-adjoin ...)`
+## `(bag-adjoin! ...)`
+## `(bag-replace ...)`
+## `(bag-replace! ...)`
+## `(bag-delete ...)`
+## `(bag-delete! ...)`
+## `(bag-delete-all ...)`
+## `(bag-delete-all! ...)`
+## `(bag-search! ...)`
+## `(bag-size ...)`
+## `(bag-find ...)`
+## `(bag-count ...)`
+## `(bag-any? ...)`
+## `(bag-every? ...)`
+## `(bag-map ...)`
+## `(bag-for-each ...)`
+## `(bag-fold ...)`
+## `(bag-filter ...)`
+## `(bag-remove ...)`
+## `(bag-partition ...)`
+## `(bag-filter! ...)`
+## `(bag-remove! ...)`
+## `(bag-partition! ...)`
+## `(bag-copy ...)`
+## `(bag->list ...)`
+## `(list->bag ...)`
+## `(list->bag! ...)`
+## `(bag=? ...)`
+## `(bag<? ...)`
+## `(bag>? ...)`
+## `(bag<=? ...)`
+## `(bag>=? ...)`
+## `(bag-union ...)`
+## `(bag-intersection ...)`
+## `(bag-difference ...)`
+## `(bag-xor ...)`
+## `(bag-union! ...)`
+## `(bag-intersection! ...)`
+## `(bag-difference! ...)`
+## `(bag-xor! ...)`
+## `(bag-sum set1 set2 ... )`
+## `(bag-sum! bag1 bag2 ... )`
+## `(bag-product n bag)`
+## `(bag-product! n bag)`
+## `(bag-unique-size bag)`
+## `(bag-element-count bag element)`
+## `(bag-for-each-unique proc bag)`
+## `(bag-fold-unique proc nil bag)`
+## `(bag-increment! bag element count)`
+## `(bag-decrement! bag element count)`
+## `(bag->set bag)`
+## `(set->bag set)`
+## `(set->bag! bag set)`
+## `(bag->alist bag)`
+## `(alist->bag comparator alist)`
+## `set-comparator`
+## `bag-comparator`
+## `(call-with-input-file)`
+## `(call-with-output-file)`
+## `(delete-file)`
+## `(file-exists?)`
+## `(open-input-file)`
+## `(open-output-file)`
+## `(with-input-from-file)`
+## `(with-output-to-file)`
+## `(open-binary-input-file)`
+## `(open-binary-output-file)`
+## `(command-line)`
+## `(emergency-exit [obj])`
+## `(exit [obj])`
+## `(get-environment-variable name)`
+## `(get-environment-variables)`
+## `(interaction-environment)`
+## `(generator arg ...)`
+## `(circular-generator arg ...)`
+## `(make-iota-generator count [start [step]])`
+## `(make-range-generator start [end [step]])`
+## `(make-coroutine-generator proc)`
+## `(list->generator list)`
+## `(vector->generator vector [start [end]])`
+## `(reverse-vector->generator vector [start [end]])`
+## `(string->generator string [start [end]])`
+## `(bytevector->generator bytevector [start [end]])`
+## `(make-for-each-generator for-each obj)`
+## `(make-unfold-generator stop? mapper successor seed)`
+## `(gcons* item ... generator)`
+## `(gappend generator ...)`
+## `(gflatten generator)`
+## `(ggroup generator k [padding])`
+## `(gmerge less-than generator1 ...)`
+## `(gmap proc generator ...)`
+## `(gcombine proc seed generator generator2)`
+## `(gfilter predicate generator)`
+## `(gremove predicate generator)`
+## `(gstate-filter proc seed generator)`
+## `(gtake gen k [padding])`
+## `(gdrop gen k)`
+## `gtake-while pred gen`
+## `gdrop-while pred gen`
+## `(gdelete item gen [=])`
+## `(gdelete-neighbor-dups gen [=])`
+## `(gindex value-gen index-gen)`
+## `(gselect value-gen truth-gen)`
+## `(generator->list generator [k])`
+## `(generator->reverse-list generator [k])`
+## `(generator->vector generator [k])`
+## `(generator->vector! vector at generator)`
+## `(generator->string generator [k])`
+## `(generator-fold proc seed generator ...)`
+## `(generator-for-each proc generator ...)`
+## `(generator-map->list proc generator ...)`
+## `(generator-find predicate generator)`
+## `(generator-count predicate generator)`
+## `(generator-any predicate generator)`
+## `(generator-every predicate generator)`
+## `(generator-unfold gen unfold arg ...)`
+## `(make-accumulator kons knil finalizer)`
+## `(count-accumulator)`
+## `(list-accumulator)`
+## `(reverse-list-accumulator)`
+## `(vector-accumulator)`
+## `(reverse-vector-accumulator)`
+## `(vector-accumulator! vector at)`
+## `(string-accumulator)`
+## `(bytevector-accumulator)`
+## `(bytevector-accumulator! bytevector at)`
+## `(sum-accumulator)`
+## `(product-accumulator)`
+## `(make-hash-table comparator . args)`
+## `(hash-table comparator [key value] ...)`
+## `(hash-table-unfold stop? mapper successor seed comparator args ...)`
+## `(alist->hash-table alist comparator arg ...)`
+## `(hash-table? obj)`
+## `(hash-table-contains? hash-table key)`
+## `(hash-table-empty? hash-table)`
+## `(hash-table=? value-comparator hash-table1 hash-table2)`
+## `(hash-table-mutable? hash-table)`
+## `(hash-table-ref hash-table key [failure [success]])`
+## `(hash-table-ref/default hash-table key default)`
+## `(hash-table-set! hash-table key value ...)`
+## `(hash-table-delete! hash-table key ...)`
+## `(hash-table-intern! hash-table key failure)`
+## `(hash-table-update! hash-table key updater [failure [success]])`
+## `(hash-table-pop! hash-table)`
+## `(hash-table-clear! hash-table)`
+## `(hash-table-size hash-table)`
+## `(hash-table-keys hash-table)`
+## `(hash-table-values hash-table)`
+## `(hash-table-entries hash-table)`
+## `(hash-table-find proc hash-table failure)`
+## `(hash-table-count pred hash-table)`
+## `(hash-table-map proc comparator hash-table)`
+## `(hash-table-for-each proc hash-table)`
+## `(hash-table-map! proc hash-table)`
+## `(hash-table-map->list proc hash-table)`
+## `(hash-table-fold proc seed hash-table)`
+## `(hash-table-prune! proc hash-table)`
+## `(hash-table-copy hash-table [mutable?])`
+## `(hash-table-empty-copy hash-table)`
+## `(hash-table->alist hash-table)`
+## `(hash-table-union! hash-table1 hash-table2)`
+## `(hash-table-intersection! hash-table1 hash-table2)`
+## `(hash-table-difference! hash-table1 hash-table2)`
+## `(hash-table-xor! hash-table1 hash-table2)`
+## `fl-e`
+## `fl-1/e`
+## `fl-e-2`
+## `fl-e-pi/4`
+## `fl-log2-e`
+## `fl-log10-e`
+## `fl-log-2`
+## `fl-1/log-2`
+## `fl-log-3`
+## `fl-log-pi`
+## `fl-log-10`
+## `fl-1/log-10`
+## `fl-pi`
+## `fl-1/pi`
+## `fl-2pi`
+## `fl-pi/2`
+## `fl-pi/4`
+## `fl-pi-squared`
+## `fl-degree`
+## `fl-2/pi`
+## `fl-2/sqrt-pi`
+## `fl-sqrt-2`
+## `fl-sqrt-3`
+## `fl-sqrt-5`
+## `fl-sqrt-10`
+## `fl-1/sqrt-2`
+## `fl-cbrt-2`
+## `fl-cbrt-3`
+## `fl-4thrt-2`
+## `fl-phi`
+## `fl-log-phi`
+## `fl-1/log-phi`
+## `fl-euler`
+## `fl-e-euler`
+## `fl-sin-1`
+## `fl-cos-1`
+## `fl-gamma-1/2`
+## `fl-gamma-1/3`
+## `fl-gamma-2/3`
+## `fl-greatest`
+## `fl-least`
+## `fl-epsilon`
+## `fl-fast-fl+*`
+## `fl-integer-exponent-zero`
+## `fl-integer-exponent-nan`
+## `(flonum number)`
+## `(fladjacent x y)`
+## `(flcopysign x y)`
+## `(make-flonum x n)`
+## `(flinteger-fraction x)`
+## `(flexponent x)`
+## `(flinteger-exponent x)`
+## `(flnormalized-fraction-exponent x)`
+## `(flsign-bit x)`
+## `(flonum? obj)`
+## `(fl=? x y z ...)`
+## `(fl<? x y z ...)`
+## `(fl>? x y z ...)`
+## `(fl<=? x y z ...)`
+## `(fl>=? x y z ...)`
+## `(flunordered? x y)`
+## `(flinteger? x)`
+## `(flzero? x)`
+## `(flpositive? x)`
+## `(flnegative? x)`
+## `(flodd? x)`
+## `(fleven? x)`
+## `(flfinite? x)`
+## `(flinfinite? x)`
+## `(flnan? x)`
+## `(flnormalized? x)`
+## `(fldenormalized? x)`
+## `(flmax x ...)`
+## `(flmin x ...)`
+## `(fl+ x ...)`
+## `(fl* x ...)`
+## `(fl+* x y z)`
+## `(fl- x y ...)`
+## `(fl/ x y ...)`
+## `(flabs x)`
+## `(flabsdiff x y)`
+## `(flposdiff x y)`
+## `(flsgn x)`
+## `(flnumerator x)`
+## `(fldenominator x)`
+## `(flfloor x)`
+## `(flceiling x)`
+## `(flround x)`
+## `(fltruncate x)`
+## `(flexp x)`
+## `(flexp2 x)`
+## `(flexp-1 x)`
+## `(flsquare x)`
+## `(flsqrt x)`
+## `(flcbrt x)`
+## `(flhypot x y)`
+## `(flexpt x y)`
+## `(fllog x)`
+## `(fllog1+ x)`
+## `(fllog2 x)`
+## `(fllog10 x)`
+## `(make-fllog-base x)`
+## `(flsin x)`
+## `(flcos x)`
+## `(fltan x)`
+## `(flasin x)`
+## `(flacos x)`
+## `(flatan [y] x)`
+## `(flsinh x)`
+## `(flcosh x)`
+## `(fltanh x)`
+## `(flasinh x)`
+## `(flacosh x)`
+## `(flatanh x)`
+## `(flquotient x y)`
+## `(flremainder x y)`
+## `(flremquo x y)`
+## `(flgamma x)`
+## `(flloggamma x)`
+## `(flfirst-bessel n x)`
+## `(flsecond-bessel n x)`
+## `(flerf x)`
+## `(flerfc x)`
+## `(show output-dest fmt ...)`
+## `(displayed obj)`
+## `(written obj)`
+## `(written-simply obj)`
+## `(pretty obj)`
+## `(pretty-simply obj)`
+## `(escaped str [quote-ch esc-ch renamer])`
+## `(maybe-escaped str pred [quote-ch esc-ch renamer])`
+## `(numeric num [radix precision sign comma comma-sep decimal-sep])`
+## `(numeric/comma num [base precision sign])`
+## `(numeric/si num [base separator])`
+## `nl`
+## `fl`
+## `(space-to column)`
+## `(tab-to [tab-width])`
+## `nothing`
+## `(each fmt ...)`
+## `(each-in-list list-of-fmts)`
+## `(joined mapper list [sep])`
+## `(joined/prefix mapper list [sep])`
+## `(joined/suffix mapper list [sep])`
+## `(joined/last mapper last-mapper list [sep])`
+## `(joined/dot mapper dot-mapper list [sep])`
+## `(joined/range mapper start [end sep])`
+## `(padded width fmt ...)`
+## `(padded/right width fmt ...)`
+## `(padded/both width fmt ...)`
+## `(trimmed width fmt ...)`
+## `(trimmed/right width fmt ...)`
+## `(trimmed/both width fmt ...)`
+## `(trimmed/lazy width fmt ...)`
+## `(fitted width fmt ...)`
+## `(fitted/right width fmt ...)`
+## `(fitted/both width fmt ...)`
+## `(columnar column ...)`
+## `(tabular column ...)`
+## `(wrapped/list list-of-strings)`
+## `(wrapped/char fmt ...)`
+## `(justified <format> ...)`
+## `(from-file pathname)`
+## `(line-numbers [start])`
+## `(as-red fmt ...)`
+## `(as-blue fmt ...)`
+## `(as-green fmt ...)`
+## `(as-cyan fmt ...)`
+## `(as-yellow fmt ...)`
+## `(as-magenta fmt ...)`
+## `(as-white fmt ...)`
+## `(as-black fmt ...)`
+## `(as-bold fmt ...)`
+## `(as-underline fmt ...)`
+## `(as-unicode fmt ...)`
+## `(unicode-terminal-width str)`
+## `(fn ((id state-var) ...) expr ... fmt)`
+## `(with ((state-var value) ...) fmt ...)`
+## `(forked fmt1 fmt2)`
+## `(call-with-output formatter mapper)`
+## `port`
+## `row`
+## `col`
+## `width`
+## `output`
+## `writer`
+## `string-width`
+## `pad-char`
+## `eellipsis`
+## `radix`
+## `precision`
+## `decimal-sep`
+## `decimal-align`
+## `word-separator?`
+## `(ipair a d)`
+## `(ilist object ...)`
+## `(xipair d a)`
+## `(ipair* elt1 elt2 ...)
+## `(make-ilist n [fill])`
+## `(ilist-tabulate n init-proc)`
+## `(ilist-copy dilist)`
+## `(iiota count [start step])`
+## `(proper-ilist? x)`
+## `(ilist? x)`
+## `(dotted-ilist? x)`
+## `(ipair? object)`
+## `(null-ilist? ilist)
+## `(not-ipair? x)`
+## `(ilist= elt= ilist1 ...)`
+## `(icar ipair)`
+## `(icdr ipair)`
+## `(icaar ipair)`
+## `(icadr ipair)`
+## `(icdddar ipair)`
+## `(icddddr ipair)
+## `(ilist-ref ilist i)`
+## `(ifirst ipair)`
+## `(isecond ipair)`
+## `(ithird ipair)`
+## `(ifourth ipair)`
+## `(ififth ipair)`
+## `(isixth ipair)`
+## `(iseventh ipair)`
+## `(ieighth ipair)`
+## `(ininth ipair)`
+## `(itenth ipair)`
+## `(icar+icdr ipair)`
+## `(itake x i)`
+## `(idrop x i)`
+## `(ilist-tail x i)`
+## `(itake-right dilist i)`
+## `(idrop-right dilist i)`
+## `(isplit-at  x i)`
+## `(ilast ipair)`
+## `(last-ipair ipair)`
+## `(ilength  ilist)`
+## `(iappend  ilist1 ...)`
+## `(iconcatenate  ilist-of-ilists)`
+## `(ireverse  ilist)`
+## `(iappend-reverse  rev-head tail)`
+## `(izip ilist1 ilist2 ...)`
+## `(iunzip1 ilist)`
+## `(iunzip2 ilist)`
+## `(iunzip3 ilist)`
+## `(iunzip4 ilist)`
+## `(iunzip5 ilist)`
+## `(icount pred ilist1 ilist2 ...)`
+## `(ifold kons knil ilist1 ilist2 ...)`
+## `(ifold-right kons knil ilist1 ilist2 ...)`
+## `(ipair-fold kons knil ilist1 ilist2 ...)`
+## `(ipair-fold-right kons knil ilist1 ilist2 ...)`
+## `(ireduce f ridentity ilist)`
+## `(ireduce-right f ridentity ilist)`
+## `(iunfold p f g seed [tail-gen])`
+## `(iunfold-right p f g seed [tail])`
+## `(imap proc ilist1 ilist2 ...)`
+## `(ifor-each proc ilist1 ilist2 ...)`
+## `(iappend-map  f ilist1 ilist2 ...)`
+## `(imap-in-order f ilist1 ilist2 ...)`
+## `(ipair-for-each f ilist1 ilist2 ...)`
+## `(ifilter-map f ilist1 ilist2 ...)`
+## `(ifilter pred ilist)`
+## `(ipartition pred ilist)`
+## `(iremove pred ilist)`
+## `(ifind pred ilist)`
+## `(ifind-tail pred ilist)`
+## `(itake-while  pred ilist)`
+## `(idrop-while pred ilist)`
+## `(ispan pred ilist)`
+## `(ibreak  pred ilist)`
+## `(iany pred ilist1 ilist2 ...)`
+## `(ievery pred ilist1 ilist2 ...)`
+## `(ilist-index pred ilist1 ilist2 ...)`
+## `(imember x ilist [=])`
+## `(imemq x ilist)`
+## `(imemv x ilist)
+## `(idelete  x ilist [=])`
+## `(idelete-duplicates  ilist [=])`
+## `(ialist-cons key datum ialist)`
+## `(ialist-delete  key ialist [=])`
+## `(replace-icar ipair object)`
+## `(replace-icdr ipair object)`
+## `(pair->ipair pair)`
+## `(ipair->pair ipair)`
+## `(list->ilist flist)`
+## `(ilist->list dilist)`
+## `(tree->itree object)`
+## `(itree->tree object)`
+## `(gtree->itree object)`
+## `(gtree->tree object)`
+## `(iapply procedure object ... ilist)`
+## `ipair-comparator`
+## `ilist-comparator`
+## `(make-ilist-comparator comparator)`
+## `(make-improper-ilist-comparator comparator)`
+## `(make-icar-comparator comparator)`
+## `(make-icdr-comparator comparator)
+## `(floor/ numerator denominator)`
+## `(floor-quotient numerator denominator)`
+## `(floor-remainder numerator denominator)`
+## `(ceiling/ numerator denominator)`
+## `(ceiling-quotient numerator denominator)`
+## `(ceiling-remainder numerator denominator)`
+## `(truncate/ numerator denominator)`
+## `(truncate-quotient numerator denominator)`
+## `(truncate-remainder numerator denominator)`
+## `(round/ numerator denominator)`
+## `(round-quotient numerator denominator)`
+## `(round-remainder numerator denominator)`
+## `(euclidean/ numerator denominator)`
+## `(euclidean-quotient numerator denominator)`
+## `(euclidean-remainder numerator denominator)`
+## `(balanced/ numerator denominator)`
+## `(balanced-quotient numerator denominator)`
+## `(balanced-remainder numerator denominator)`
+## `(load filename [environment])`
+## `(fdb-error code)`
+## `(fdb-setup-network)`
+## `(fdb-run-network)`
+## `(fdb-stop-network)`
+## `(fdb-future-cancel future)`
+## `(fdb-future-release-memory future)`
+## `(fdb-future-destroy future)`
+## `(fdb-future-block-until-ready future)`
+## `(fdb-future-ready? future)`
+## `(fdb-future-callback proc)`
+## `(fdb-future-set-callback future proc)`
+## `(fdb-future-get-error future)`
+## `(fdb-future-get-key future)`
+## `(fdb-future-get-value future)`
+## `(fdb-future-get-range future)`
+## `(fdb-create-database cluster-file)`
+## `(fdb-database-destroy database)`
+## `(fdb-database-create-transaction database)`
+## `(fdb-transaction-destroy transaction)`
+## `(fdb-transaction-cancel transaction)`
+## `(fdb-transaction-get transaction key snapshot?)`
+## `(fdb-transaction-get-range transaction begin-key begin-or-equal? begin-offset end-key end-or-equal? end-offset limit target-bytes mode iteration snapshot? reverse?)`
+## `(fdb-transaction-set transaction key value)`
+## `(fdb-transaction-atomic-op transaction key param operation-type)`
+## `(fdb-transaction-clear transaction key)`
+## `(fdb-transaction-clear-range transaction start end)`
+## `(fdb-transaction-commit transaction)`
+## `(fdb-transaction-on-error transaction)`
+## `(pack object) → bytevector`
+## `(unpack bytevector) → object`
+## `(make-nstore subspace n)`
+## `(nstore-add! nstore txn vector)`
+## `(nstore-delete! nstore txn vector)`
+## `(nstore-ask? nstore txn vector)`
+## `(nstore-query nstore txn pattern seed)`
+## `(make-gstore subspace)`
+## `(gstore-make-vertex gstore txn properties)`
+## `(gstore-vertex? obj)`
+## `(gstore-vertex-uid vertex)`
+## `(gstore-vertex-properties vertex)`
+## `(gstore-make-edge gstore txn start label end properties)`
+## `(gstore-edge? obj)`
+## `(gstore-edge-uid edge)`
+## `(gstore-edge-start edge)`
+## `(gstore-edge-end edge)`
+## `(gstore-edge-properties edge)`
+## `(make-vector size [fill])`
+## `(vector x ...)`
+## `(vector-unfold f length initial-seed ...)`
+## `(vector-unfold-right f length initial-seed ...)`
+## `(vector-copy vec [start [end]])`
+## `(vector-reverse-copy vec [start [end]])`
+## `(vector-append vec ...)`
+## `(vector-concatenate list-of-vectors)`
+## `(vector-append-subvectors [vec start end] ...)`
+## `(vector? x)`
+## `(vector-empty? vec)`
+## `(vector= elt=? vec ...)`
+## `(vector-ref vec i)`
+## `(vector-length vec)`
+## `(vector-fold kons knil vec1 vec2 ...)`
+## `(vector-fold-right kons knil vec1 vec2 ...)`
+## `(vector-map f vec1 vec2 ...)`
+## `(vector-map! f vec1 vec2 ...)`
+## `(vector-for-each f vec1 vec2 ...)`
+## `(vector-count pred? vec1 vec2 ...)`
+## `(vector-cumulate f knil vec)`
+## `(vector-index pred? vec1 vec2 ...)`
+## `(vector-index-right pred? vec1 vec2 ...)`
+## `(vector-skip pred? vec1 vec2 ...)`
+## `(vector-skip-right pred? vec1 vec2 ...)`
+## `(vector-binary-search vec value cmp)`
+## `(vector-any pred? vec1 vec2 ...)`
+## `(vector-every pred? vec1 vec2 ...)`
+## `(vector-partition pred? vec)`
+## `(vector-set! vec i value)`
+## `(vector-swap! vec i j)`
+## `(vector-fill! vec fill [start [end]])`
+## `(vector-reverse! vec [start [end]])`
+## `(vector-copy! to at from [start [end]])`
+## `(vector-reverse-copy! to at from [start [end]])`
+## `(vector-unfold! f vec start end initial-seed ...)`
+## `(vector-unfold-right! f vec start end initial-seed ...)`
+## `(vector->list vec [start [end]])`
+## `(reverse-vector->list vec [start [end]])`
+## `(list->vector proper-list)`
+## `(reverse-list->vector proper-list)`
+## `(string->vector string [start [end]])`
+## `(vector->string vec [start [end]])`
+## `(generator->lseq generator)`
+## `(lseq? x)`
+## `(lseq=? elt=? lseq1 lseq2)`
+## `(lseq-car lseq)`
+## `(lseq-first lseq)`
+## `(lseq-cdr lseq)`
+## `(lseq-rest lseq)`
+## `(lseq-ref lseq i)`
+## `(lseq-take lseq i)`
+## `(lseq-drop lseq i)`
+## `(lseq-realize lseq)`
+## `(lseq->generator lseq)`
+## `(lseq-length lseq)`
+## `(lseq-append lseq ...)`
+## `(lseq-zip lseq1 lseq2 ...)`
+## `(lseq-map proc lseq1 lseq2 ...)`
+## `(lseq-for-each proc lseq1 lseq2 ...)
+## `(lseq-filter pred lseq)`
+## `(lseq-remove pred lseq)`
+## `(lseq-find-tail pred lseq)`
+## `(lseq-take-while pred lseq)`
+## `(lseq-drop-while pred lseq)`
+## `(lseq-any pred lseq1 lseq2 ...)`
+## `(lseq-every pred lseq1 lseq2 ...)`
+## `(lseq-index pred lseq1 lseq2 ...)`
+## `(lseq-member x lseq [ pred ])`
+## `(lseq-memq x lseq)`
+## `(lseq-memv x lseq)`
+## `(display obj [port])`
+## `(write obj [port])`
+## `(write-simple obj [port])`
+## `(write-shared obj [port])`
+## `angle`
+## `imag-part`
+## `magnitude`
+## `make-polar`
+## `make-rectangular`
+## `real-part`
+## `fx-width`
+## `fx-greatest`
+## `fx-least`
+## `(fixnum? obj)`
+## `(fx=? i ...)`
+## `(fx<? i ...)`
+## `(fx>? i ...)`
+## `(fx<=? i ...)`
+## `(fx>=? i ...)`
+## `(fxzero? i)`
+## `(fxpositive? i)`
+## `(fxnegative? i)`
+## `(fxodd? i)`
+## `(fxeven? i)`
+## `(fxmax i j ...)`
+## `(fxmin i j ...)`
+## `(fx+ i j)`
+## `(fx- i j)`
+## `(fxneg i)`
+## `(fx* i j)`
+## `(fxquotient i j)`
+## `(fxremainder i j)`
+## `(fxabs i)`
+## `(fxsquare i)`
+## `(fxsqrt i)`
+## `(fx+/carry i j k)`
+## `(fxnot i)`
+## `(fxand i ...)`
+## `(fxior i ...)`
+## `(fxxor i ...)`
+## `(fxarithmetic-shift i count)`
+## `(fxarithmetic-shift-left i count)`
+## `(fxarithmetic-shift-right i count)`
+## `(fxbit-count i)`
+## `(fxlength i)`
+## `(fxif mask i j)`
+## `(fxbit-set? index i)`
+## `(fxcopy-bit index i boolean)`
+## `(fxfirst-set-bit i)`
+## `(fxbit-field i start end)`
+## `(fxbit-field-rotate i count start end)`
+## `(fxbit-field-reverse i start end)`
+## `(hashmap comparator [key value] ...)`
+## `(hashmap-unfold stop? mapper successor seed comparator)`
+## `(hashmap? obj)`
+## `(hashmap-contains? hashmap key)`
+## `(hashmap-empty? hashmap)`
+## `(hashmap-disjoint? hashmap1 hashmap2)`
+## `(hashmap-ref hashmap key [failure [success]])`
+## `(hashmap-ref/default hashmap key default)`
+## `(hashmap-key-comparator hashmap)`
+## `(hashmap-adjoin hashmap arg ...)`
+## `(hashmap-adjoin! hashmap arg ...)`
+## `(hashmap-set hashmap arg ...)`
+## `(hashmap-set! hashmap arg ...)`
+## `(hashmap-replace hashmap key value)`
+## `(hashmap-replace! hashmap key value)`
+## `(hashmap-delete hashmap key ...)`
+## `(hashmap-delete! hashmap key ...)`
+## `(hashmap-delete-all hashmap key-list)`
+## `(hashmap-delete-all! hashmap key-list)`
+## `(hashmap-intern hashmap key failure)`
+## `(hashmap-intern! hashmap key failure)`
+## `(hashmap-update hashmap key updater [failure [success]])`
+## `(hashmap-update! hashmap key updater [failure [success]])`
+## `(hashmap-update/default hashmap key updater default)`
+## `(hashmap-update!/default hashmap key updater default)`
+## `(hashmap-pop hashmap [failure])`
+## `(hashmap-pop! hashmap [failure])`
+## `(hashmap-search hashmap key failure success)`
+## `(hashmap-search! hashmap key failure success)`
+## `(hashmap-size hashmap)`
+## `(hashmap-find predicate hashmap failure)`
+## `(hashmap-count predicate hashmap)`
+## `(hashmap-any? predicate hashmap)`
+## `(hashmap-every? predicate hashmap)`
+## `(hashmap-keys hashmap)`
+## `(hashmap-values hashmap)`
+## `(hashmap-entries hashmap)`
+## `(hashmap-map proc comparator hashmap)`
+## `(hashmap-map->list proc hashmap)`
+## `(hashmap-for-each proc hashmap)`
+## `(hashmap-fold proc nil hashmap)`
+## `(hashmap-filter predicate hashmap)`
+## `(hashmap-filter! predicate hashmap)`
+## `(hashmap-remove predicate hashmap)`
+## `(hashmap-remove! predicate hashmap)`
+## `(hashmap-partition predicate hashmap)`
+## `(hashmap-partition! predicate hashmap)`
+## `(hashmap-copy hashmap)`
+## `(hashmap->alist hashmap)`
+## `(alist->hashmap comparator alist)`
+## `(alist->hashmap! hashmap alist)`
+## `(hashmap-union hashmap1 hashmap2 ...)`
+## `(hashmap-intersection hashmap1 hashmap2 ...)`
+## `(hashmap-difference hashmap1 hashmap2 ...)`
+## `(hashmap-xor hashmap1 hashmap2 ...)`
+## `(hashmap-union! hashmap1 hashmap2 ...)`
+## `(hashmap-intersection! hashmap1 hashmap2 ...)`
+## `(hashmap-difference! hashmap1 hashmap2 ...)`
+## `(hashmap-xor! hashmap1 hashmap2 ...)`
+## `(comparator? obj)`
+## `hashmap-comparator`
+## `(make-hashmap-comparator comparator)`
+## `(list-sorted? < lis)`
+## `(vector-sorted? < v [start [ end ] ]`
+## `(list-sort < lis)`
+## `(list-stable-sort < lis)`
+## `(list-sort! < lis)`
+## `(list-stable-sort! < lis)`
+## `(vector-sort < v [ start [ end ] ])`
+## `(vector-stable-sort < v [ start [ end ] ])`
+## `(vector-sort! < v [ start [ end ] ])`
+## `(vector-stable-sort! < v [ start [ end ] ])`
+## `(list-merge < lis1 lis2)`
+## `(list-merge! < lis1 lis2)`
+## `(vector-merge < v1 v2 [ start1 [ end1 [ start2 [ end2 ] ] ] ])`
+## `(vector-merge! < to from1 from2 [ start [ start1 [ end1 [ start2 [ end2 ] ] ] ] ])`
+## `(list-delete-neighbor-dups = lis)`
+## `(list-delete-neighbor-dups! = lis)`
+## `(vector-delete-neighbor-dups = v [ start [ end ] ])`
+## `(vector-delete-neighbor-dups! = v [ start [ end ] ])`
+## `(vector-find-median < v knil [ mean ])`
+## `(vector-find-median! < v knil [ mean ])`
+## `(vector-select! < v k [ start [ end ] ] )`
+## `(vector-separate! < v k [ start [ end ] ] )`
+## `(char-set? obj)`
+## `(char-set= cs1 ...)`
+## `(char-set<= cs1 ...)`
+## `(char-set-hash cs [bound])`
+## `(char-set-cursor cset)`
+## `(char-set-ref cset cursor)`
+## `(char-set-cursor-next cset cursor)`
+## `(end-of-char-set? cursor)`
+## `(char-set-fold kons knil cs)`
+## `(char-set-unfold f p g seed [base-cs])`
+## `(char-set-unfold! f p g seed base-cs)`
+## `(char-set-for-each proc cs)`
+## `(char-set-copy cs)`
+## `(char-set char1 ...)`
+## `(list->char-set  char-list [base-cs])`
+## `(list->char-set! char-list base-cs)`
+## `(string->char-set  s [base-cs])`
+## `(string->char-set! s base-cs)`
+## `(char-set-filter  pred cs [base-cs])`
+## `(char-set-filter! pred cs base-cs)`
+## `(ucs-range->char-set  lower upper [error? base-cs])`
+## `(ucs-range->char-set! lower upper error? base-cs)`
+## `(->char-set x)`
+## `(char-set-size cs)`
+## `(char-set-count pred cs)`
+## `(char-set->list cs)`
+## `(char-set->string cs)`
+## `(char-set-contains? cs char)`
+## `(char-set-every pred cs)`
+## `(char-set-any   pred cs)`
+## `(char-set-adjoin cs char1 ...)`
+## `(char-set-delete cs char1 ...)`
+## `(char-set-adjoin! cs char1 ...)`
+## `(char-set-delete! cs char1 ...)`
+## `(char-set-complement cs)`
+## `(char-set-union cs1 ...)`
+## `(char-set-intersection cs1 ...)`
+## `(char-set-difference cs1 cs2 ...)`
+## `(char-set-xor cs1 ...)`
+## `(char-set-diff+intersection cs1 cs2 ...)`
+## `(char-set-complement! cs)`
+## `(char-set-union! cs1 cs2 ...)`
+## `(char-set-intersection! cs1 cs2 ...)`
+## `(char-set-difference! cs1 cs2 ...)`
+## `(char-set-xor! cs1 cs2 ...)`
+## `(char-set-diff+intersection! cs1 cs2 cs3 ...)`
+## `char-set:lower-case`
+## `char-set:upper-case`
+## `char-set:title-case`
+## `char-set:letter`
+## `char-set:digit`
+## `char-set:letter+digit`
+## `char-set:graphic`
+## `char-set:printing`
+## `char-set:whitespace`
+## `char-set:iso-control`
+## `char-set:punctuation`
+## `char-set:symbol`
+## `char-set:hex-digit`
+## `char-set:blank`
+## `char-set:ascii`
+## `char-set:empty`
+## `char-set:full`
+## `(acos z)`
+## `(asin z)`
+## `(atan z)`
+## `(cos z)`
+## `(exp z t)`
+## `(finite? z)`
+## `(infinite? z)`
+## `(log z)`
+## `(nan? z)`
+## `sin`
+## `sqrt`
+## `tan`
+## `(char-alphabetic? char)`
+## `(char-alphabetic? char)`
+## `(char-ci<=? char)`
+## `(char-ci<? char)`
+## `(char-ci=? char)`
+## `(char-ci>=? char)`
+## `(char-ci>? char)`
+## `(char-downcase char)`
+## `(char-foldcase char)`
+## `(char-lower-case? char)`
+## `(char-numeric? char)`
+## `(char-upcase char)`
+## `(char-upper-case? char)`
+## `(char-whitespace? char)`
+## `(string-ci<=? string1 string2 ...)`
+## `(string-ci<? string1 string2 ...)`
+## `(string-ci=? string1 string2 ...)`
+## `(string-ci>=? string1 string2 ...)`
+## `(string-ci>? string1 string2 ...)`
+## `(string-downcase string)`
+## `(string-foldcase string)`
+## `(string-upcase string)`
+## `(current-jiffy)`
+## `(current-second)`
+## `(jiffies-per-second)`
+## `(box value)`
+## `(box? object)`
+## `(unbox box)`
+## `(set-box! box value)`
+## `(cons a d)`
+## `(list object ...)`
+## `(xcons d a)`
+## `(cons* obj ... tail)`
+## `(make-list n [fill])`
+## `(list-tabulate n init-proc)`
+## `(list-copy flist)`
+## `(circular-list elt1 elt2 ...)`
+## `(iota count [start step])`
+## `(proper-list? x)`
+## `(circular-list? x)`
+## `(dotted-list? x)`
+## `(pair? obj)`
+## `(null? obj)`
+## `(null-list? list)`
+## `(not-pair? x)`
+## `(list= elt= list1 ...)`
+## `(car pair)`
+## `(cdr pair)`
+## `(list-ref clist i)`
+## `(first pair)`
+## `(second pair)`
+## `(third pair)`
+## `(fourth pair)`
+## `(fifth pair)`
+## `(sixth pair)`
+## `(seventh pair)`
+## `(eighth pair)`
+## `(ninth pair)`
+## `(tenth pair)`
+## `(car+cdr pair)`
+## `(take lst i)`
+## `(drop lst i)`
+## `(take-right flist i)`
+## `(drop-right flist i)`
+## `(take! x i)`
+## `(drop-right! flist i)`
+## `(split-at  x i)`
+## `(split-at! x i)`
+## `(last pair)`
+## `(last-pair pair)`
+## `(length list)`
+## `(length+ clist)`
+## `(append  list1 ...)`
+## `(append! list1 ...)`
+## `(concatenate  list-of-lists)`
+## `(concatenate! list-of-lists)`
+## `(reverse list)`
+## `(reverse! list)`
+## `(append-reverse rev-head tail)`
+## `(append-reverse! rev-head tail)`
+## `(zip clist1 clist2 ...)`
+## `(unzip1 list)`
+## `(unzip2 list)`
+## `(unzip3 list)`
+## `(unzip4 list)`
+## `(unzip5 list)`
+## `(count pred clist1 ...)`
+## `(fold kons knil list1 ...)`
+## `(fold-right kons knil list1 ...)`
+## `(pair-fold kons knil list1 ...)`
+## `(pair-fold-right kons knil list1 ...)`
+## `(reduce f ridentity list)`
+## `(reducse-right f ridentity list)`
+## `(unfold p f g seed [tail-gen])`
+## `(unfold-right p f g seed [tail-gen])`
+## `(map proc list1 ...)`
+## `(for-each proc clist1 ...)`
+## `(append-map f list ...)`
+## `(append-map! f list ...)`
+## `(map! f list1 ...)`
+## `(map-in-order f clist1 ...)`
+## `(pair-for-each f clist1 ...)`
+## `(filter-map f clist1 ...)`
+## `(filter pred list)`
+## `(partition pred list)`
+## `(remove pred list)`
+## `(filter! pred list)`
+## `(partition! pred list)`
+## `(remove! pred list)`
+## `(find pred clist)`
+## `(find-tail pred clist)`
+## `(take-while  pred clist)`
+## `(take-while! pred clist)`
+## `(drop-while pred clist)`
+## `(span pred clist)`
+## `(span!  pred list)`
+## `(break  pred clist)`
+## `(break! pred list)
+## `(any pred clist1 ...)`
+## `(every pred clist1 ...)`
+## `(list-index pred clist1 ...)`
+## `(member x list [=])`
+## `(memq x list)`
+## `(memv x list)`
+## `(delete x list)`
+## `(delete! x list)`
+## `(delete-duplicates  list [=])`
+## `(delete-duplicates! list [=])`
+## `(assoc key alist [=])`
+## `(assq key alist)`
+## `(assv key alist)`
+## `(alist-cons key datum alist)`
+## `(alist-copy alist)`
+## `(alist-delete  key alist [=])`
+## `(alist-delete! key alist [=])`
+## `(lset<= = list1 ...)`
+## `(lset= = list1 ...)`
+## `(lset-adjoin = list elt1 ...)`
+## `(lset-union = list1 ...)`
+## `(lset-intersection = list1 list2 ...)`
+## `(lset-difference = list1 list2 ...)`
+## `(lset-xor = list1 ...)
+## `(lset-diff+intersection = list1 list2 ...)`
+## `(lset-union! list1 ...)`
+## `(lset-intersection! list1 ...)`
+## `(lset-difference! list1 ...)`
+## `(lset-xor! list1 ...)`
+## `(lset-diff+intersection! list1 ...)`
+## `(set-car! pair object)`
+## `(set-cdr! pair object)`
+## `(text? obj)`
+## `(textual? obj)`
+## `(textual-null? text)`
+## `(textual-every pred textual [start end])`
+## `(textual-any   pred textual [start end])`
+## `(make-text len char)`
+## `(text char ...)`
+## `(text-tabulate proc len)`
+## `(text-unfold stop? mapper successor seed [base make-final])`
+## `(text-unfold-right stop? mapper successor seed [base make-final])`
+## `(textual->text textual)`
+## `(textual->string textual [start end])`
+## `(textual->vector textual [start end])`
+## `(textual->list   textual [start end])`
+## `(string->text string [start end])`
+## `(vector->text char-vector [start end])`
+## `(list->text   char-list [start end])`
+## `(reverse-list->text char-list)`
+## `(textual->utf8    textual [start end])`
+## `(textual->utf16   textual [start end])`
+## `(textual->utf16be textual [start end])`
+## `(textual->utf16le textual [start end])`
+## `(utf8->text    bytevector [start end])`
+## `(utf16->text   bytevector [start end])`
+## `(utf16be->text bytevector [start end])`
+## `(utf16le->text bytevector [start end])`
+## `(text-length text)`
+## `(text-ref text idx)`
+## `(textual-length textual)`
+## `(textual-ref textual idx)`
+## `(subtext    text start end)`
+## `(subtextual textual start end)`
+## `(textual-copy textual [start end])`
+## `(textual-take       textual nchars)`
+## `(textual-drop       textual nchars)`
+## `(textual-take-right textual nchars)`
+## `(textual-drop-right textual nchars)`
+## `(textual-pad       textual len [char start end])`
+## `(textual-pad-right textual len [char start end])`
+## `(textual-trim       textual [pred start end])`
+## `(textual-trim-right textual [pred start end])`
+## `(textual-trim-both  textual [pred start end])`
+## `(textual-replace textual1 textual2 start1 end1 [start2 end2])`
+## `(textual=? textual1 textual2 textual3 ...)`
+## `(textual<?  textual1 textual2 textual3 ...)`
+## `(textual>?  textual1 textual2 textual3 ...)`
+## `(textual<=? textual1 textual2 textual3 ...)`
+## `(textual>=? textual1 textual2 textual3 ...)`
+## `(textual-ci=? textual1 textual2 textual3 ...)`
+## `(textual-ci<?  textual1 textual2 textual3 ...)`
+## `(textual-ci>?  textual1 textual2 textual3 ...)`
+## `(textual-ci<=? textual1 textual2 textual3 ...)`
+## `(textual-ci>=? textual1 textual2 textual3 ...)`
+## `(textual-prefix-length textual1 textual2 [start1 end1 start2 end2])`
+## `(textual-suffix-length textual1 textual2 [start1 end1 start2 end2])`
+## `(textual-prefix? textual1 textual2 [start1 end1 start2 end2])`
+## `(textual-suffix? textual1 textual2 [start1 end1 start2 end2])`
+## `(textual-index       textual pred [start end])`
+## `(textual-index-right textual pred [start end])`
+## `(textual-skip        textual pred [start end])`
+## `(textual-skip-right  textual pred [start end])`
+## `(textual-contains       textual1 textual2 [start1 end1 start2 end2])`
+## `(textual-contains-right textual1 textual2 [start1 end1 start2 end2])`
+## `(textual-upcase   textual)`
+## `(textual-downcase textual)`
+## `(textual-foldcase textual)`
+## `(textual-titlecase textual)`
+## `(textual-append textual ...)`
+## `(textual-concatenate textual-list)`
+## `(textual-concatenate-reverse textual-list [final-textual end])`
+## `(textual-join textual-list [delimiter grammar])`
+## `(textual-fold       kons knil textual [start end])`
+## `(textual-fold-right kons knil textual [start end])`
+## `(textual-map proc textual1 textual2 ...)`
+## `(textual-for-each proc textual1 textual2 ...)`
+## `(textual-map-index proc textual [start end])`
+## `(textual-for-each-index proc textual [start end])`
+## `(textual-count textual pred [start end])`
+## `(textual-filter pred textual [start end])`
+## `(textual-remove pred textual [start end])`
+## `(textual-replicate textual from to [start end])`
+## `(textual-split textual delimiter [grammar limit start end])`
+## `(ideque element ...)`
+## `(ideque-tabulate n proc)`
+## `(ideque-unfold stop? mapper successor seed)`
+## `(ideque-unfold-right stop? mapper successor seed)`
+## `(ideque? x)`
+## `(ideque-empty? idaeque)`
+## `(ideque= elt= ideque ...)`
+## `(ideque-any pred ideque)`
+## `(ideque-every pred ideque)`
+## `(ideque-front ideque)`
+## `(ideque-back ideque)`
+## `(ideque-remove-front ideque)`
+## `(ideque-remove-back ideque)`
+## `(ideque-add-front ideque obj)`
+## `(ideque-add-back ideque obj)`
+## `(ideque-ref ideque n)`
+## `(ideque-take ideque n)`
+## `(ideque-take-right ideque n)`
+## `(ideque-drop ideque n)`
+## `(ideque-drop-right ideque n)`
+## `(ideque-split-at ideque n)`
+## `(ideque-length ideque)`
+## `(ideque-append ideque ...)`
+## `(ideque-reverse ideque)`
+## `(ideque-count pred ideque)`
+## `(ideque-zip ideque1 ideque2 ...)`
+## `(ideque-map proc ideque)`
+## `(ideque-filter-map proc ideque)`
+## `(ideque-for-each proc ideque)`
+## `(ideque-for-each-right proc ideque)`
+## `(ideque-fold proc nil ideque)`
+## `(ideque-fold-right proc nil ideque)`
+## `(ideque-append-map proc ideque)`
+## `(ideque-filter pred ideque)`
+## `(ideque-remove pred ideque)`
+## `(ideque-partition proc ideque)`
+## `(ideque-find pred ideque [ failure ])`
+## `(ideque-find-right pred ideque [ failure ])`
+## `(ideque-take-while pred ideque)`
+## `(ideque-take-while-right pred ideque)`
+## `(ideque-drop-while pred ideque)`
+## `(ideque-drop-while-right pred ideque)`
+## `(ideque-span pred ideque)`
+## `(ideque-break pred ideque)`
+## `(list->ideque list)`
+## `(ideque->list ideque)`
+## `(generator->ideque generator)`
+## `(ideque->generator ideque)`
