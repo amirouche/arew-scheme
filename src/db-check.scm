@@ -1,4 +1,4 @@
-(library (babelialite db-check)
+(library (db-check)
 
   (export check-000
           check-001
@@ -14,7 +14,7 @@
           )
 
   (import (chezscheme)
-          (babelialite db)
+          (db)
           (check))
 
   (define (pk . args)

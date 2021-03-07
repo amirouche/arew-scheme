@@ -1,5 +1,5 @@
 #!chezscheme
-(library (babelialite db)
+(library (db)
   (export db-open
           db-cursor-seek?
           db-cursor-next?
