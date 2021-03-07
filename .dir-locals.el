@@ -11,10 +11,11 @@
                            (put 'engine-in-transaction 'scheme-indent-function 2)
 			   ;; scheme
 			   (put 'switch 'scheme-indent-function 1)
+			   (put 'if3 'scheme-indent-function 2)
 			   (put 'call-with-input-string 'scheme-indent-function 1)
 			   (put 'call-with-values 'scheme-indent-function 1)
 			   (put 'search-address-info 'scheme-indent-function 3)
-			   (put 'call-with-lock 'scheme-indent-function 1)
+			   (put 'with-lock 'scheme-indent-function 1)
 			   (put 'call-with-port 'scheme-indent-function 1)
 			   (put 'with-cursor 'scheme-indent-function 1)
 			   (put 'with-directory 'scheme-indent-function 1)
