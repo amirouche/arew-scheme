@@ -48,9 +48,10 @@ relying on the following rules:
    but do not contain the word `privateer`. Such query terms are
    called negative query terms.
 
-4. If `,latest` appears in the query, instead of sorting by relevance,
-   hits will be sorted according to the time they were indexed for the
-   first time.  It allows to retrieve new or recent documents.
+4. When `,latest` appears in the query, instead of sorting by
+   relevance, hits will be sorted according to the time they were
+   indexed for the first time.  It allows to retrieve new or recent
+   documents.
 
 5. Up to three exclamation marks can appear in a query. The more
    exclamation marks they are the more Babelia will consider words
@@ -70,6 +71,9 @@ relying on the following rules:
    yield document that necessarly contain `search` and `engine` or a
    related word but reduce the score of those that contain `private`
    because `private` is related to the negated word `privateer`.
+
+7. When `,inbound` is followed with an URL, Babelia will return a list
+   of documents that links to that URL.
 
 ## Typofix
 
