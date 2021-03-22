@@ -71,6 +71,11 @@ relying on the following rules:
    related word but reduce the score of those that contain `private`
    because `private` is related to the negated word `privateer`.
 
+## Typofix
+
+When for a given query, there is not hits, Babelia will try its best
+to suggest typofixes, or suggest queries to speed a little the flow.
+
 ## Query suggestion
 
 Babelia can also narrow your search query, and will suggest related
@@ -80,6 +85,12 @@ adventure.
 Also, when Babelia consider that the query will take too much time, it
 will still suggest related queries that will take an appropriate
 amount of time.
+
+## Entity recognition
+
+When Babelia match one or more words to an entity found in the
+knowledge base, it will display a box that describe what it
+recognized.
 
 ## Search Pad
 
