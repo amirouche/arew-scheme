@@ -75,6 +75,9 @@ relying on the following rules:
 7. When `,inbound` is followed with an URL, Babelia will return a list
    of documents that links to that URL.
 
+8. When `,explore` is followed with an URL, Babelia will display a
+   graphical interface to explore the Internet network of that page.
+
 ## Typofix
 
 When for a given query, there is not hits, Babelia will try its best
@@ -101,3 +104,7 @@ recognized.
 A search pad is semi-private journal of your search queries with their
 results.  You can create a search pad using the menu on the top-right
 corner.
+
+When using th search pad, the input query `,note` possibly followed by
+some text will return no results, but will allow you to save some
+insight for your future self.

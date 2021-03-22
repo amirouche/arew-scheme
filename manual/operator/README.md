@@ -29,3 +29,11 @@ Babelia instance.
 This document describes the tools available from the graphical user
 interface to control the crawler, configure the knowledge-base, and
 monitor disk use.
+
+## Initial Configuration
+
+If the administrator did not reset the password, you will be greeted
+with a request to provide two times the same password.
+
+After login, you will have a chance to seed the crawler with your
+communities favorite domains, and possibly a few ATOM or RSS feeds.
