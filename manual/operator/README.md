@@ -7,11 +7,12 @@ accessible search engine.
 
 Search has been an essential part of knowledge acquisition from the
 dawn of time, whether it is antique lexicographically ordered filing
-cabinets or nowadays computer-based wonders such as Google or
-Bing. From casual search to help achieve common tasks such as cooking,
-keeping up with the news, a regular dose of cat memes or professional
-search such as science research. Search is, and will remain, an
-essential daily-use tool, that stires human progress forward.
+cabinets or nowadays computer-based wonders such as Google, Bing or
+Baidu. From casual search to help achieve common tasks such as
+cooking, keeping up with the news, a regular dose of cat memes or
+professional search such as science research. Search is, and will
+remain, an essential daily-use tool, that stires human progress
+forward.
 
 Babelia aims to replace the use of privateer search engines with a
 search engine that is open, hence under the control of the commons.
@@ -36,4 +37,5 @@ If the administrator did not reset the password, you will be greeted
 with a request to provide two times the same password.
 
 After login, you will have a chance to seed the crawler with your
-communities favorite domains, and possibly a few ATOM or RSS feeds.
+community favorite domains, and possibly a few ATOM, RSS feeds or
+`sitemaps.xml`.
