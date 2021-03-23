@@ -7,11 +7,12 @@ accessible search engine.
 
 Search has been an essential part of knowledge acquisition from the
 dawn of time, whether it is antique lexicographically ordered filing
-cabinets or nowadays computer-based wonders such as Google or
-Bing. From casual search to help achieve common tasks such as cooking,
-keeping up with the news, a regular dose of cat memes or professional
-search such as science research. Search is, and will remain, an
-essential daily-use tool, that stires human progress forward.
+cabinets or nowadays computer-based wonders such as Google, Bing or
+Baidu. From casual search to help achieve common tasks such as
+cooking, keeping up with the news, a regular dose of cat memes, or
+professional search such as science research. Search is, and will
+remain, an essential daily-use tool, that stires human progress
+forward.
 
 Babelia aims to replace the use of privateer search engines with a
 search engine that is open, hence under the control of the commons.
@@ -31,14 +32,14 @@ hopefully find what your are looking for.  Like other popular search
 engine, Babelia comes with mini-language that allows to express what
 you are looking for.
 
-Upon a query, babelia will return what is called **hits** those are
-the documents that match the query you entered in the input box,
-relying on the following rules:
+Upon query, babelia will return what is called **hits** those are the
+documents that match the query you entered in the input box, relying
+on the following rules:
 
 1. All words separated by space will appear *verbatim* in
-   hits. Punctuation characters are ignored e.g. dash `-` or `,` or
-   `;` except the exclamation mark, dash `-` and minus `,` as
-   explained in the following rules.
+   hits. Punctuation characters are ignored such as two-dots `:` or
+   question mark `?` or colon `;` except the exclamation mark, dash
+   `-` and minus `,` as explained in the following rules.
 
 2. Two or more words separated by space and wrapped in double quotes
    will appear *verbatim* in hits e.g. `"search engine tooling"`
@@ -76,7 +77,7 @@ relying on the following rules:
    of documents that links to that URL.
 
 8. When `,explore` is followed with an URL, Babelia will display a
-   graphical interface to explore the Internet network of that page.
+   graphical interface to explore the web network of that page.
 
 ## Typofix
 
@@ -105,6 +106,6 @@ A search pad is semi-private journal of your search queries with their
 results.  You can create a search pad using the menu on the top-right
 corner.
 
-When using th search pad, the input query `,note` possibly followed by
-some text will return no results, but will allow you to save some
-insight for your future self.
+When using a search pad, the input query `,note` possibly followed by
+some text will return no results, but will allow you to save insights
+for your future self.
