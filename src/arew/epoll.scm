@@ -160,6 +160,7 @@
   (define (epoll-unregister-read! epoll fd)
     (define ifd (scheme-hash-table-ref (epoll-events epoll)
                                        (cons fd 'read)))
+    (close ifd)
     (scheme-hash-table-delete! (epoll-events epoll)
                                (cons fd 'read))
 
@@ -171,6 +172,7 @@
   (define (epoll-unregister-write! epoll fd)
     (define ifd (scheme-hash-table-ref (epoll-events epoll)
                                        (cons fd 'write)))
+    (close ifd)
     (scheme-hash-table-delete! (epoll-events epoll)
                                (cons fd 'write))
 
