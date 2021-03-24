@@ -44,9 +44,9 @@ are mainstream, `untangle` only expose the asynchronous support of BSD
 sockets from the kernel.
 
 `untangle` high-level interface expose generators and accumulators to
-respectively read from and write into sockets. Both TCP and UDP are
-supported. In particular, Scheme's ports are not supported by this
-library.
+respectively read from and write into sockets. Both TCP and UDP
+sockets are supported. In particular, Scheme's port interface is not
+supported by this library.
 
 `untangle` support the execution of CPU-bound procedures or other
 blocking procedure in POSIX threads, possibly relying on a pool of
