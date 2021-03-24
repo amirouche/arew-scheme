@@ -20,14 +20,6 @@
 
   (define stdlib (load-shared-object #f))
 
-  (define dup
-    (let ((func (foreign-procedure __collect_safe "dup" (int) int)))
-      (lambda (fd)
-        (define out (func fd))
-        (when (fx=? out -1)
-          (error 'epoll "dup failed" (errno)))
-        out)))
-
   (define close
     (let ((func (foreign-procedure __collect_safe "close" (int) int)))
       (lambda (fd)
@@ -39,23 +31,20 @@
     (close (epoll-fd epoll)))
 
   (define-record-type <epoll>
-    (make-epoll% fd fds events)
+    (make-epoll% fd events)
     epoll?
     (fd epoll-fd)
-    ;; fds is hash-table that associates internal fd and user fd
-    ;; with the desired event type: read or write. This is required
-    ;; because Linux epoll can only register read, write, or both
-    ;; together, yielding the same event for both reads and writes
-    ;; that makes it impossible for user code to sort out whether
-    ;; the fd is ready for writes or reads.
-    (fds epoll-fds)
+    ;; hash-table used to keep track of registred events, in order to
+    ;; avoid a roundtrip via errno to learn that a file descriptor is
+    ;; already registred, and to avoid to register twice the same
+    ;; event.
     (events epoll-events))
 
   (define EPOLLIN #x001)
   (define EPOLLOUT #x004)
   (define EPOLL_CTL_ADD 1)
   (define EPOLL_CTL_DEL 2)
-  (define EPOLL_CTL_MOD 2)
+  (define EPOLL_CTL_MOD 3)
 
   (define-ftype epoll-data
     (union (ptr void*)
@@ -70,12 +59,18 @@
   (define (epoll-event-fd event index)
     (ftype-ref epoll-event (data fd) event index))
 
-  (define (epoll-event-type event index)
+  (define types% (list (cons EPOLLIN 'read)
+                       (cons EPOLLOUT 'write)))
+
+  (define (epoll-event-types event index)
     (define type (ftype-ref epoll-event (data events) event index))
-    (cond
-     ((fx=? type EPOLLIN) 'read)
-     ((fx=? type EPOLLOUT) 'write)
-     (else (error 'epoll "Unknown event type"))))
+    (let loop ((types types%)
+               (out '()))
+      (if (null? types)
+          out
+          (if (fx=? (fxand type (caar types)) (caar types))
+              (loop (cdr types) (cons (cdar types) out))
+              (loop (cdr types) out)))))
 
   (define (make-epoll-event fd type)
     (define event (make-ftype-pointer epoll-event
@@ -90,6 +85,9 @@
 
   (define (make-epoll-write-event fd)
     (make-epoll-event fd EPOLLOUT))
+
+  (define (make-epoll-read-and-write event fd)
+    (make-epoll-event fd (fxor EPOLLIN EPOLLOUT)))
 
   (define epoll-create1
     (let ((func (foreign-procedure __collect_safe "epoll_create1" (int) int)))
@@ -107,7 +105,7 @@
       (lambda (epoll op fd event)
         (func epoll op fd (ftype-pointer-address event)))))
 
-  (define epoll-wait
+  (define epoll-wait ;; TOOD: look into epoll_pwait
     (let ([func (foreign-procedure __collect_safe "epoll_wait" (int void* int int) int)])
       (lambda (epoll events max-events timeout)
         (func epoll
@@ -117,9 +115,7 @@
 
   (define (make-epoll)
     (define comparator (make-comparator integer? =? #f values))
-
     (make-epoll% (epoll-create1 0)
-                 (scheme-make-hash-table comparator)
                  ;; TODO: replace with ad-hoc comparator
                  (scheme-make-hash-table (make-default-comprator))))
 
@@ -127,59 +123,76 @@
     (assume
      (not (scheme-hash-table-contains? (epoll-events epoll)
                                        (cons fd 'read))))
-    (define ifd (dup fd))
     (scheme-hash-table-set! (epoll-events epoll)
                             (cons fd 'read)
-                            ifd)
-    (scheme-hash-table-set! (epoll-fds epoll)
-                            ifd
-                            (cons fd 'read))
+                            #t)
 
-    (epoll-ctl (epoll-fd epoll)
-               EPOLL_CTL_ADD
-               ifd
-               (make-epoll-read-event ifd)))
+    (if (scheme-hash-table-contains? (epoll-events epoll)
+                                     (cons fd 'write))
+        ;; modify existing event
+        (epoll-ctl (epoll-fd epoll)
+                   EPOLL_CTL_MOD
+                   fd
+                   (make-epoll-read-and-write-event fd))
+        ;; add event
+        (epoll-ctl (epoll-fd epoll)
+                   EPOLL_CTL_ADD
+                   fd
+                   (make-epoll-read-event fd)))
 
   (define (epoll-register-write! epoll fd)
     (assume
      (not (scheme-hash-table-contains? (epoll-events epoll)
                                        (cons fd 'write))))
-    (define ifd (dup fd))
     (scheme-hash-table-set! (epoll-events epoll)
                             (cons fd 'write)
-                            ifd)
-    (scheme-hash-table-set! (epoll-fds epoll)
-                            ifd
-                            (cons fd 'write))
+                            #t)
+    (if (scheme-hash-table-contains? (epoll-events epoll)
+                                     (cons fd 'read))
+        ;; modify existing event
+        (epoll-ctl (epoll-fd epoll)
+                   EPOLL_CTL_MOD
+                   fd
+                   (make-epoll-read-and-write-event fd))
+        ;; add event
+        (epoll-ctl (epoll-fd epoll)
+                   EPOLL_CTL_ADD
+                   fd
+                   (make-epoll-write-event fd)))
 
-    (epoll-ctl (epoll-fd epoll)
-               EPOLL_CTL_ADD
-               ifd
-               (make-epoll-write-event ifd)))
 
   (define (epoll-unregister-read! epoll fd)
-    (define ifd (scheme-hash-table-ref (epoll-events epoll)
-                                       (cons fd 'read)))
-    (close ifd)
-    (scheme-hash-table-delete! (epoll-events epoll)
-                               (cons fd 'read))
+    (assume (scheme-hash-table-contains? (epoll-events epoll)
+                                         (cons fd 'read)))
+    (if (scheme-hash-table-contains? (epoll-events epoll)
+                                     (cons fd 'write))
+        ;; modify existing event
+        (epoll-ctl (epoll-fd epoll)
+                   EPOLL_CTL_MOD
+                   fd
+                   (make-epoll-write-event fd))
+        ;; delete event
+        (epoll-ctl (epoll-fd epoll)
+                   EPOLL_CTL_DEL
+                   fd
+                   0)))
 
-    (scheme-hash-table-delete! (epoll-fds epoll)
-                               ifd)
-
-    (epoll-ctl epoll EPOLL_CTL_DEL ifd 0))
 
   (define (epoll-unregister-write! epoll fd)
-    (define ifd (scheme-hash-table-ref (epoll-events epoll)
-                                       (cons fd 'write)))
-    (close ifd)
-    (scheme-hash-table-delete! (epoll-events epoll)
-                               (cons fd 'write))
-
-    (scheme-hash-table-delete! (epoll-fds epoll)
-                               ifd)
-
-    (epoll-ctl epoll EPOLL_CTL_DEL ifd 0))
+    (assume (scheme-hash-table-contains? (epoll-events epoll)
+                                         (cons fd 'read)))
+    (if (scheme-hash-table-contains? (epoll-events epoll)
+                                     (cons fd 'read))
+        ;; modify existing event
+        (epoll-ctl (epoll-fd epoll)
+                   EPOLL_CTL_MOD
+                   fd
+                   (make-epoll-read-event fd))
+        ;; delete event
+        (epoll-ctl (epoll-fd epoll)
+                   EPOLL_CTL_DEL
+                   fd
+                   0)))
 
   (define (epoll-wait-all epoll timeout)
     (define events
@@ -196,8 +209,7 @@
                       (out out))
             (if (fx=? index count)
                 (loop0 out)
-                (let* ((fd (epoll-event-fd events index))
-                       (event (scheme-hash-table-ref (epoll-fds epoll)
-                                                     fd)))
+                (let ((fd (epoll-event-fd events index))
+                      (types (epoll-event-types events index)))
                   (loop1 (fx+ index 1)
-                         (cons event out)))))))))
+                         (append (map (lambda (type) (cons fd type)) types) out)))))))))
