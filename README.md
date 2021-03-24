@@ -26,3 +26,16 @@ Also:
 - nginx (HTTP proxy)
 - Python (tooling)
 - CoCrawler
+
+## Acknowledgements
+
+[![Logo NLnet: abstract logo of four people seen from above](https://nlnet.nl/logo/banner.png)](https://NLnet.nl)
+
+[![Logo NGI Zero: letterlogo shaped like a tag](https://nlnet.nl/image/logos/NGI0_tag.png)](https://NLnet.nl/NGI0)
+
+This project was funded through the [NGI0
+Discovery](https://nlnet.nl/discovery) Fund, a fund established by
+NLnet with financial support from the European Commission's [Next
+Generation Internet](https://ngi.eu) programme, under the aegis of DG
+Communications Networks, Content and Technology under grant agreement
+No 825322.
