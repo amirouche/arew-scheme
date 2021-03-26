@@ -2,6 +2,7 @@
 (library (arew entangle)
   (export make-entangle
           entangle?
+          entangle-empty?
           entangle-epoll
           entangle-register-read!
           entangle-unregister-read!
@@ -121,6 +122,9 @@
     (make-entangle% (epoll-create1 0)
                     ;; TODO: replace with ad-hoc comparator
                     (scheme-make-hash-table (make-default-comprator))))
+
+  (define (entangle-empty? entangle)
+    (scheme-hash-table-empty? (entangle-ks entangle)))
 
   (define (entangle-register-read! entangle fd k)
     (assume
