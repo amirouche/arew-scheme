@@ -3,6 +3,10 @@
 
 Low-level BSD socket bindings.
 
+related: https://srfi.schemers.org/srfi-106/srfi-106.html
+related: https://practical-scheme.net/gauche/man/gauche-refe/Networking.html#Networking
+related: http://wiki.call-cc.org/eggref/5/socket
+
 ### `struct-sockaddr`
 
 ### `struct-sockaddr-in`
