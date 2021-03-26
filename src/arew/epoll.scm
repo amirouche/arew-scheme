@@ -31,14 +31,11 @@
     (close (epoll-fd epoll)))
 
   (define-record-type <epoll>
-    (make-epoll% fd events)
+    (make-epoll% fd ks)
     epoll?
     (fd epoll-fd)
-    ;; hash-table used to keep track of registred events, in order to
-    ;; avoid a roundtrip via errno to learn that a file descriptor is
-    ;; already registred, and to avoid to register twice the same
-    ;; event.
-    (events epoll-events))
+    ;; hash-table association events with continuations.
+    (ks epoll-ks))
 
   (define EPOLLIN #x001)
   (define EPOLLOUT #x004)
@@ -119,13 +116,13 @@
                  ;; TODO: replace with ad-hoc comparator
                  (scheme-make-hash-table (make-default-comprator))))
 
-  (define (epoll-register-read! epoll fd)
+  (define (epoll-register-read! epoll fd k)
     (assume
      (not (scheme-hash-table-contains? (epoll-events epoll)
                                        (cons fd 'read))))
     (scheme-hash-table-set! (epoll-events epoll)
                             (cons fd 'read)
-                            #t)
+                            k)
 
     (if (scheme-hash-table-contains? (epoll-events epoll)
                                      (cons fd 'write))
@@ -134,19 +131,19 @@
                    EPOLL_CTL_MOD
                    fd
                    (make-epoll-read-and-write-event fd))
-        ;; add event
+        ;; add as new event
         (epoll-ctl (epoll-fd epoll)
                    EPOLL_CTL_ADD
                    fd
                    (make-epoll-read-event fd)))
 
-  (define (epoll-register-write! epoll fd)
+  (define (epoll-register-write! epoll fd k)
     (assume
      (not (scheme-hash-table-contains? (epoll-events epoll)
                                        (cons fd 'write))))
     (scheme-hash-table-set! (epoll-events epoll)
                             (cons fd 'write)
-                            #t)
+                            k)
     (if (scheme-hash-table-contains? (epoll-events epoll)
                                      (cons fd 'read))
         ;; modify existing event
@@ -154,7 +151,7 @@
                    EPOLL_CTL_MOD
                    fd
                    (make-epoll-read-and-write-event fd))
-        ;; add event
+        ;; add as a new event
         (epoll-ctl (epoll-fd epoll)
                    EPOLL_CTL_ADD
                    fd
@@ -194,22 +191,28 @@
                    fd
                    0)))
 
+
   (define (epoll-wait-all epoll timeout)
     (define events
       (foreign-alloc (fx* (ftype-sizeof epoll-event) 1024)))
-    (let loop0 ((out '()))
+
+    (define (call-continuation events count index)
+      (define fd (epoll-event-fd events index))
+      (let loop ((types (epoll-event-types events index)))
+        (if (null? types)
+            (let ((index (fx+ index 1)))
+              (unless (fx=? index count)
+                (call-continuation events count index)))
+            (let ((k (ref (epoll-ks epoll) (cons fd (car types)))))
+              (k) ;; call continuation
+              (loop (cdr types))))))
+
+    (let loop0 ()
       (define count (epoll-wait epoll events 1024 timeout))
       (when (fx=? count -1)
         (error 'epoll "epoll-wait failed"))
       (if (fxzero? count)
+          (foreign-free events)
           (begin
-            (foreign-free events)
-            out)
-          (let loop1 ((index 0)
-                      (out out))
-            (if (fx=? index count)
-                (loop0 out)
-                (let ((fd (epoll-event-fd events index))
-                      (types (epoll-event-types events index)))
-                  (loop1 (fx+ index 1)
-                         (append (map (lambda (type) (cons fd type)) types) out)))))))))
+            (call-continuation events count 0)
+            (loop)))))
