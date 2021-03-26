@@ -67,10 +67,7 @@
       (lambda (code)
         (func code))))
 
-  (define errno
-    (let ((func (foreign-procedure "__errno_location" () void*)))
-      (lambda ()
-        (foreign-ref 'int (func) 0))))
+  (define errno #%$errno)
 
   (define-syntax-rule (check* who v)
     (when (= v -1)
