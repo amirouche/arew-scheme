@@ -1,14 +1,14 @@
 #!chezscheme
-(library (arew epoll)
-  (export make-epoll
-          epoll?
-          epoll-fd
-          epoll-register-read!
-          epoll-unregister-read!
-          epoll-register-write!
-          epoll-unregister-write!
-          epoll-wait-all
-          epoll-close!)
+(library (arew entangle)
+  (export make-entangle
+          entangle?
+          entangle-epoll
+          entangle-register-read!
+          entangle-unregister-read!
+          entangle-register-write!
+          entangle-unregister-write!
+          entangle-continue
+          entangle-close!)
 
   (import (only (chezscheme) load-shared-object)
           (scheme base)
@@ -27,15 +27,15 @@
         (when (fx=? code -1)
           (error 'epoll "close failed" (errno))))))
 
-  (define (epoll-close! epoll)
-    (close (epoll-fd epoll)))
+  (define (entangle-close! entangle)
+    (close (entangle-epoll entangle)))
 
-  (define-record-type <epoll>
-    (make-epoll% fd ks)
-    epoll?
-    (fd epoll-fd)
+  (define-record-type <entangle>
+    (make-entangle% epoll ks)
+    entangle?
+    (epoll entangle-epoll)
     ;; hash-table association events with continuations.
-    (ks epoll-ks))
+    (ks entangle-ks))
 
   (define EPOLLIN #x001)
   (define EPOLLOUT #x004)
@@ -105,114 +105,120 @@
   (define epoll-wait ;; TOOD: look into epoll_pwait
     (let ([func (foreign-procedure __collect_safe "epoll_wait" (int void* int int) int)])
       (lambda (epoll events max-events timeout)
-        (func epoll
-              (ftype-pointer-address events)
-              max-events
-              timeout))))
+        (define count (func epoll
+                            (ftype-pointer-address events)
+                            max-events
+                            timeout))
+        (when (fx=? count -1)
+          (error 'epoll "epoll-wait failed"))
+        count)))
 
-  (define (make-epoll)
+  (define (make-entangle)
     (define comparator (make-comparator integer? =? #f values))
-    (make-epoll% (epoll-create1 0)
-                 ;; TODO: replace with ad-hoc comparator
-                 (scheme-make-hash-table (make-default-comprator))))
+    (make-entangle% (epoll-create1 0)
+                    ;; TODO: replace with ad-hoc comparator
+                    (scheme-make-hash-table (make-default-comprator))))
 
-  (define (epoll-register-read! epoll fd k)
+  (define (entangle-register-read! entangle fd k)
     (assume
-     (not (scheme-hash-table-contains? (epoll-events epoll)
+     (not (scheme-hash-table-contains? (entangle-ks entangle)
                                        (cons fd 'read))))
-    (scheme-hash-table-set! (epoll-events epoll)
+    (scheme-hash-table-set! (entangle-ks entangle)
                             (cons fd 'read)
                             k)
 
-    (if (scheme-hash-table-contains? (epoll-events epoll)
+    (if (scheme-hash-table-contains? (entangle-ks entangle)
                                      (cons fd 'write))
         ;; modify existing event
-        (epoll-ctl (epoll-fd epoll)
+        (epoll-ctl (entangle-epoll entangle)
                    EPOLL_CTL_MOD
                    fd
                    (make-epoll-read-and-write-event fd))
         ;; add as new event
-        (epoll-ctl (epoll-fd epoll)
+        (epoll-ctl (entangle-epoll entangle)
                    EPOLL_CTL_ADD
                    fd
-                   (make-epoll-read-event fd)))
+                   (make-epoll-read-event fd))))
 
-  (define (epoll-register-write! epoll fd k)
+  (define (entangle-register-write! entangle fd k)
     (assume
-     (not (scheme-hash-table-contains? (epoll-events epoll)
+     (not (scheme-hash-table-contains? (entangle-ks entangle)
                                        (cons fd 'write))))
-    (scheme-hash-table-set! (epoll-events epoll)
+    (scheme-hash-table-set! (entangle-ks entangle)
                             (cons fd 'write)
                             k)
-    (if (scheme-hash-table-contains? (epoll-events epoll)
+    (if (scheme-hash-table-contains? (entangle-ks entangle)
                                      (cons fd 'read))
         ;; modify existing event
-        (epoll-ctl (epoll-fd epoll)
+        (epoll-ctl (entangle-epoll entangle)
                    EPOLL_CTL_MOD
                    fd
                    (make-epoll-read-and-write-event fd))
         ;; add as a new event
-        (epoll-ctl (epoll-fd epoll)
+        (epoll-ctl (entangle-epoll entangle)
                    EPOLL_CTL_ADD
                    fd
                    (make-epoll-write-event fd)))
 
 
-  (define (epoll-unregister-read! epoll fd)
-    (assume (scheme-hash-table-contains? (epoll-events epoll)
+  (define (entangle-unregister-read! entangle fd)
+    (assume (scheme-hash-table-contains? (entangle-ks entangle)
                                          (cons fd 'read)))
-    (if (scheme-hash-table-contains? (epoll-events epoll)
+    (if (scheme-hash-table-contains? (entangle-ks entangle)
                                      (cons fd 'write))
         ;; modify existing event
-        (epoll-ctl (epoll-fd epoll)
+        (epoll-ctl (entangle-epoll entangle)
                    EPOLL_CTL_MOD
                    fd
                    (make-epoll-write-event fd))
         ;; delete event
-        (epoll-ctl (epoll-fd epoll)
+        (epoll-ctl (entangle-epoll entangle)
                    EPOLL_CTL_DEL
                    fd
                    0)))
 
 
-  (define (epoll-unregister-write! epoll fd)
-    (assume (scheme-hash-table-contains? (epoll-events epoll)
+  (define (entangle-unregister-write! entangle fd)
+    (assume (scheme-hash-table-contains? (entangle-ks entangle)
                                          (cons fd 'read)))
-    (if (scheme-hash-table-contains? (epoll-events epoll)
+    (if (scheme-hash-table-contains? (entangle-ks entangle)
                                      (cons fd 'read))
         ;; modify existing event
-        (epoll-ctl (epoll-fd epoll)
+        (epoll-ctl (entangle-epoll entangle)
                    EPOLL_CTL_MOD
                    fd
                    (make-epoll-read-event fd))
         ;; delete event
-        (epoll-ctl (epoll-fd epoll)
+        (epoll-ctl (entangle-epoll entangle)
                    EPOLL_CTL_DEL
                    fd
                    0)))
 
 
-  (define (epoll-wait-all epoll timeout)
+  (define (entangle-continue entangle timeout)
+    (define maxevents 1024) ;; magic
     (define events
-      (foreign-alloc (fx* (ftype-sizeof epoll-event) 1024)))
+      (foreign-alloc (fx* (ftype-sizeof epoll-event) maxevents)))
 
-    (define (call-continuation events count index)
+    (define (call-continuations events count index)
       (define fd (epoll-event-fd events index))
       (let loop ((types (epoll-event-types events index)))
         (if (null? types)
             (let ((index (fx+ index 1)))
               (unless (fx=? index count)
-                (call-continuation events count index)))
-            (let ((k (ref (epoll-ks epoll) (cons fd (car types)))))
-              (k) ;; call continuation
+                (call-continuations events count index)))
+            (let ((k (ref (entangle-ks entangle) (cons fd (car types)))))
+              (k) ;; Call the continuation associated with the pair
+                  ;; (fd . event-type)
               (loop (cdr types))))))
 
     (let loop0 ()
-      (define count (epoll-wait epoll events 1024 timeout))
-      (when (fx=? count -1)
-        (error 'epoll "epoll-wait failed"))
+      (define count (epoll-wait (entangle-epoll entangle)
+                                events
+                                maxevents
+                                timeout))
       (if (fxzero? count)
           (foreign-free events)
           (begin
-            (call-continuation events count 0)
-            (loop)))))
+            (call-continuations events count 0)
+            (loop)))))))
