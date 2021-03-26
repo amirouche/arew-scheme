@@ -16,6 +16,9 @@
           (scheme comparator)
           (srfi srfi-145))
 
+  ;; TODO: extract epoll bindings
+  ;; TODO: use (arew cffi), use foreign-procedure*
+
   (define errno #%$errno)
 
   (define stdlib (load-shared-object #f))
@@ -161,64 +164,64 @@
                    (make-epoll-write-event fd)))
 
 
-  (define (entangle-unregister-read! entangle fd)
-    (assume (scheme-hash-table-contains? (entangle-ks entangle)
-                                         (cons fd 'read)))
-    (if (scheme-hash-table-contains? (entangle-ks entangle)
-                                     (cons fd 'write))
-        ;; modify existing event
-        (epoll-ctl (entangle-epoll entangle)
-                   EPOLL_CTL_MOD
-                   fd
-                   (make-epoll-write-event fd))
-        ;; delete event
-        (epoll-ctl (entangle-epoll entangle)
-                   EPOLL_CTL_DEL
-                   fd
-                   0)))
+    (define (entangle-unregister-read! entangle fd)
+      (assume (scheme-hash-table-contains? (entangle-ks entangle)
+                                           (cons fd 'read)))
+      (if (scheme-hash-table-contains? (entangle-ks entangle)
+                                       (cons fd 'write))
+          ;; modify existing event
+          (epoll-ctl (entangle-epoll entangle)
+                     EPOLL_CTL_MOD
+                     fd
+                     (make-epoll-write-event fd))
+          ;; delete event
+          (epoll-ctl (entangle-epoll entangle)
+                     EPOLL_CTL_DEL
+                     fd
+                     0)))
 
 
-  (define (entangle-unregister-write! entangle fd)
-    (assume (scheme-hash-table-contains? (entangle-ks entangle)
-                                         (cons fd 'read)))
-    (if (scheme-hash-table-contains? (entangle-ks entangle)
-                                     (cons fd 'read))
-        ;; modify existing event
-        (epoll-ctl (entangle-epoll entangle)
-                   EPOLL_CTL_MOD
-                   fd
-                   (make-epoll-read-event fd))
-        ;; delete event
-        (epoll-ctl (entangle-epoll entangle)
-                   EPOLL_CTL_DEL
-                   fd
-                   0)))
+    (define (entangle-unregister-write! entangle fd)
+      (assume (scheme-hash-table-contains? (entangle-ks entangle)
+                                           (cons fd 'read)))
+      (if (scheme-hash-table-contains? (entangle-ks entangle)
+                                       (cons fd 'read))
+          ;; modify existing event
+          (epoll-ctl (entangle-epoll entangle)
+                     EPOLL_CTL_MOD
+                     fd
+                     (make-epoll-read-event fd))
+          ;; delete event
+          (epoll-ctl (entangle-epoll entangle)
+                     EPOLL_CTL_DEL
+                     fd
+                     0)))
 
 
-  (define (entangle-continue entangle timeout)
-    (define maxevents 1024) ;; magic
-    (define events
-      (foreign-alloc (fx* (ftype-sizeof epoll-event) maxevents)))
+    (define (entangle-continue entangle timeout)
+      (define maxevents 1024) ;; magic
+      (define events
+        (foreign-alloc (fx* (ftype-sizeof epoll-event) maxevents)))
 
-    (define (call-continuations events count index)
-      (define fd (epoll-event-fd events index))
-      (let loop ((types (epoll-event-types events index)))
-        (if (null? types)
-            (let ((index (fx+ index 1)))
-              (unless (fx=? index count)
-                (call-continuations events count index)))
-            (let ((k (ref (entangle-ks entangle) (cons fd (car types)))))
-              (k) ;; Call the continuation associated with the pair
-                  ;; (fd . event-type)
-              (loop (cdr types))))))
+      (define (call-continuations events count index)
+        (define fd (epoll-event-fd events index))
+        (let loop ((types (epoll-event-types events index)))
+          (if (null? types)
+              (let ((index (fx+ index 1)))
+                (unless (fx=? index count)
+                  (call-continuations events count index)))
+              (let ((k (ref (entangle-ks entangle) (cons fd (car types)))))
+                (k) ;; Call the continuation associated with the pair
+                ;; (fd . event-type)
+                (loop (cdr types))))))
 
-    (let loop0 ()
-      (define count (epoll-wait (entangle-epoll entangle)
-                                events
-                                maxevents
-                                timeout))
-      (if (fxzero? count)
-          (foreign-free events)
-          (begin
-            (call-continuations events count 0)
-            (loop)))))))
+      (let loop0 ()
+        (define count (epoll-wait (entangle-epoll entangle)
+                                  events
+                                  maxevents
+                                  timeout))
+        (if (fxzero? count)
+            (foreign-free events)
+            (begin
+              (call-continuations events count 0)
+              (loop)))))))
