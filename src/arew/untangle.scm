@@ -3,8 +3,7 @@
 
   (export make-untangle
           make-untangle-channel
-          make-untangle-socket
-          untange-accept
+          untangle-accept
           untangle-bind
           untangle-channel?
           untangle-channel-recv
@@ -21,258 +20,392 @@
           untangle-stop
           untangle-time)
 
-  (import (scheme base)
-          (scheme hash-table)
-          (scheme comparator)
-          (scheme bytevector)
-          (arew network epoll)
-          (prefix (arew network socket) socket-))
+  (import (only (chezscheme)
+                make-mutex with-mutex
+                current-time make-time add-duration time<=?
+                make-condition condition-wait condition-signal)
+          (scheme base)
+          (srfi srfi-145)
+          (arew entangle)
+          (arew socket))
 
-  (define-record-type <untangle>
-    (make-untangle% status)
-    untangle?
-    (status untangle-status))
+  ;;
+  ;; XXX: Inside untangle-call/ec, escapade-singleton allows to tell
+  ;; how untangle-call/ec thunk continuation is called:
+  ;;
+  ;; - nominal case: thunk returned.
+  ;;
+  ;; - thunk called untangle-escapade, in that case escapade-singleton
+  ;; is the first argument of the continuation of thunk inside
+  ;; untangle-call/ec.
+  ;;
+  ;; escapade-singleton is a singleton, user code can not create it.
+  ;;
 
-  (define (untangle-socket-bind fd)
-    (socket-bind fd))
+  (define escapade-singleton '(escapade-singleton))
 
-  (define (untangle-socket-listen fd)
-    (socket-listen fd))
-
-  (define (untangle-socket-close fd)
-    (socket-close fd))
-
-  (define EWOULDBLOCK 11)
-
-  (define (call-with-prompt thunk handler)
+  ;; call/ec = call-with-escape-continuation
+  (define (untangle-call/ec untangle thunk)
     (call-with-values (lambda ()
                         (call/1cc
                          (lambda (k)
-                           ;; XXX: The continuation K also called
-                           ;; %prompt may be called in THUNK during
-                           ;; the extent of this lambda.
-                           (set! %prompt k)
+                           ;; K will allow to abort THUNK.
+                           (assume (not (untangle-escapade untangle)))
+                           (untangle-escapade! untangle k)
                            (thunk))))
-      (lambda out
-        (cond
-         ((and (pair? out) (eq? (car out) %wouldblock))
-          (apply handler (cdr out)))
-         (else (apply values out))))))
+      (lambda args
+        ;; args may be the empty list if thunk returns nothing.
+        (if (and (pair? args) (eq? (car args) escapade-singleton))
+            ;; XXX: escapade handler! That is always a proc and a
+            ;; continuation, because of untangle-escape.
+            (let ((proc (cadr args))
+                  (k (caddr args)))
+              ;; call the procedure proc passed to untangle-escapade
+              ;; with its continuation called k. That is, k, is what
+              ;; follow untangle-escapade call inside THUNK. K will
+              ;; allow to resume THUNK.
+              (proc k))
+            (apply values args)))))
 
-  (define (abort-to-prompt . args)
+  (define (untangle-escape untangle proc)
+    ;; XXX: Capture the continuation and call it later, that is why it
+    ;; is a call/cc and not call/1cc.
     (call/cc
      (lambda (k)
-       ;; XXX: Capture the continuation and call it later, hence
-       ;; call/cc instead of call/1cc.
-       (let ((prompt %prompt))
-         (set! %prompt #f)
-         (apply prompt (cons %wouldblock (cons k args)))))))
+       ;; save escapade
+       (define escapade (untangle-escapade untangle))
+       ;; The escapade is a call/1cc continuation, no need to keep
+       ;; it around, and it might lead to strange bugs.
+       (untangle-escapade! untangle #f)
+       ;; XXX: escapade is the continuation of thunk inside
+       ;; untangle-call/ec whereas k is the continuation of the caller
+       ;; of untangle-escapade, inside thunk.
 
-  (define-record-type <future>
-    ;; The <future> is meant to support parallel work.  The primary
-    ;; use case is to `make-future` in a green thread of the main
-    ;; thread, then use the returned value in a parallel thread to
-    ;; resolve the future using `future-continue`.  The
-    ;; main thread is expected to call `await` on the future to
-    ;; pause the current green thread, until a parallel thread
-    ;; resolve the future.  In other words, a future shared between
-    ;; parallel thread is not meant to be supported.  A future
-    ;; shared between green threads might be supported.
-    (%make-future mutex continuation values)
-    future?
-    ;; The mutex is used to atomically wait or atomically continue a
-    ;; future.  Without the mutex, and in a context where there is
-    ;; multiple POSIX threads on multiple cpu cores, it would be
-    ;; possible for a thread to await the future and another thread
-    ;; to set the values: the future will leak ie. there will be no
-    ;; other chances to resolve the future.  With the mutex, it is
-    ;; possible that deterministically serialize the order in which
-    ;; `await` and `future-continue` happen and handle all the
-    ;; cases.
-    (mutex future-mutex)
-    (continuation future-continuation future-continuation!)
-    (values future-values future-values!))
+       ;; XXX: Continue with thunk's continuation inside
+       ;; untangle-call/ec as known as escapade. Inside
+       ;; untangle-call/ec, proc and k are used to build the escape
+       ;; handler.
+       (escapade escapade-singleton proc k))))
 
-  (define (make-future)
-    (%make-future (make-mutex) #f #f))
+  (define-record-type <untangle>
+    (make-untangle% status escape time mutex queue entangle)
+    untangle?
+    (status untangle-status untangle-status!)
+    (escape untangle-escapade untangle-escapade!)
+    (time untangle-time untangle-time!)
+    (mutex untangle-mutex untangle-mutex!)
+    (queue untangle-queue untangle-queue!)
+    (entangle untangle-entangle))
 
-  (define (await future)
-    ;; It is not clear to me what will happen with abort-to-prompt,
-    ;; hence the mutex is acquired and released explicitly instead
-    ;; of using with-mutex.  It is possible that with-mutex does not
-    ;; work in this case, because, in the second branch, the mutex
-    ;; is released in the procedure exec after abort-to-prompt.
-    (mutex-acquire (future-mutex future))
-    (if (future-values future)
-        (begin
-          (mutex-release (future-mutex future))
-          ;; future-values was set concurrently, that means that the
-          ;; future is resolved no need to abort.
-          (apply values (future-values future)))
-        (begin
-          ;; In that case, the future is still pending, abort.  The
-          ;; future is released by the abort handler in the
-          ;; procedure exec.
-          (abort-to-prompt future 'future))))
+  (define untangled? (make-parameter #f))
 
-  (define (future-continue future values)
-    (with-mutex (future-mutex future)
-      (if (future-continuation future)
-          ;; Some code already called `await` on the future ie. they
-          ;; are waiting for the values, call the continuation.
-          (spawn (lambda ()
-                   (set! %future-waiting (fx- %future-waiting 1))
-                   (apply (future-continuation future) values)))
-          ;; Concurrently, the values are set before the future is
-          ;; awaited.  Set the values to allow, await to return
-          ;; immediatly.
-          (future-values! future values))))
+  (define (make-untangle)
+    (make-untangle% 'init (make-mutex) #f 0 '() (make-entangle)))
 
-  (define make-event cons)
-  (define event-continuation car)
-  (define event-mode cdr)
+  (define (untangle-spawn untangle thunk)
+    ;; TODO: use box-cas!
+    (with-mutex (untangle-mutex untangle)
+      (untangle-queue! untangle
+                       (cons (cons (untangle-time untangle)
+                                   thunk)
+                             (untangle-queue untangle)))))
 
-  (define (exec epoll thunk waiting)
-    (call-with-prompt
-     thunk
-     (lambda (k fd mode)
-       (case mode
-         ;; If the thunk aborts, then mark FD as waiting output or input.
-         ((write)
-          (epoll-ctl epoll 1 fd (make-epoll-event-out fd))
-          (scheme:hash-table-set! waiting fd (make-event k mode)))
-         ((read)
-          (epoll-ctl epoll 1 fd (make-epoll-event-in fd))
-          (scheme:hash-table-set! waiting fd (make-event k mode)))
-         ((future)
-          (future-continuation! fd k)
-          (mutex-release (future-mutex fd))
-          (with-mutex %mutex
-            (set! %future-waiting (fx+ %future-waiting 1))))
-         (else (error 'untangle "mode not supported" mode))))))
+  (define (untangle-stop untangle)
+    (untangle-status! untangle 'stopping))
 
-  (define (run-once epoll waiting)
-    ;; Execute every callback waiting in queue.
+  (define (untangle-start untangle)
+    (untangled? #t)
+    (untangle-status! untangle 'running)
     (let loop ()
-      (mutex-acquire %mutex)
-      (if (null? %queue)
-          (mutex-release %mutex)
-          (let ((head (car %queue))
-                (tail (cdr %queue)))
-            (set! %queue tail)
-            (mutex-release %mutex)
-            (exec epoll head waiting)
-            (loop))))
-    (unless (scheme:hash-table-empty? waiting)
-      ;; Wait for ONE event.
-      (let* ((event (make-epoll-event))
-             (count (epoll-wait epoll event 1 -1))
-             (fd (event-fd event))
-             (event (scheme:hash-table-ref waiting fd)))
-        (scheme:hash-table-delete! waiting fd)
-        (case (event-mode event)
-          ((write) (epoll-ctl epoll 2 fd (make-epoll-event-out fd)))
-          ((read) (epoll-ctl epoll 2 fd (make-epoll-event-in fd))))
-        (spawn (event-continuation event)))))
+      (when (and (untangle-busy? untangle)
+                 (not (eq? (untangle-status untangle)
+                           'stopping)))
+        (untangle-tick untangle)
+        (loop)))
+    (untangle-status! untangle 'stopped)
+    (untangled? #f))
 
-  (define spawn
-    (case-lambda
-     ((thunk)
-      (with-mutex %mutex
-        (set! %queue (cons thunk %queue))))
-     ((thunk k)
-      (with-mutex %mutex
-        (set! %queue (cons thunk %queue))
-        (k)))))
+  (define (untangle-busy? untangle)
+    (raise 'not-implemented))
 
-  ;; TODO: replace with fixnum comparator
-  (define integer-comparator
-    (make-comparator integer? = < number-hash))
+  (define (untangle-tick untangle)
+    (untangle-time! untangle (current-time 'time-monotonic))
+    (untangle-exec-expired-continuation untangle)
+    (untangle-exec-network-continuation untangle))
 
-  (define (untangle thunk)
-    (let ((epoll (epoll-create1 0))
-          (waiting (scheme:make-hash-table integer-comparator)))
-      (spawn thunk)
-      (let loop ()
-        (unless (and (with-mutex %mutex (null? %queue))
-                     (scheme:hash-table-empty? waiting)
-                     (with-mutex %mutex (zero? %future-waiting)))
-          (run-once epoll waiting)
-          (loop)))))
+  (define (untangle-sleep untangle nanoseconds seconds)
+    (define delta (make-time 'time-duration nanoseconds seconds))
+    (define when (add-duration (untangle-time untangle) delta))
 
-  ;; async sockets
+    (define (handler resume)
+      ;; RESUME is untangle-sleep continuation.
+      ;; TODO: use box-cas!
+      (with-mutex (untangle-mutex untangle)
+        (untangle-queue! untangle (cons (cons when resume)
+                                        (untangle-queue untangle)))))
 
-  (define (untangle-socket-socket domain type protocol)
-    (let ((fd (socket-socket domain type protocol)))
-      ;; TODO: logior 2048 with existing flags
-      (socket-fcntl! fd 4 2048) ;; SOCK_NONBLOCK
-      fd))
+    ;; untangle-sleep is necessarily called while untangle is running,
+    ;; where untangled? returns #t, otherwise user code need to call
+    ;; POSIX sleep.
+    (assume (untangled?))
+    (untangle-escape untangle handler))
 
-  (define (untangle-socket-accept fd)
-    (let ((out (socket-%accept fd 0 0)))
-      (if (fx=? out -1)
-          (let ((code (socket-errno)))
-            (if (fx=? code EWOULDBLOCK)
-                (begin
-                  (abort-to-prompt fd 'read)
-                  (accept fd))
-                (error 'accept (socket-strerror code))))
-          out)))
+  (define (untangle-exec-expired-continuation untangle)
+    (define time (untangle-time untangle))
 
-  (define (read fd bv start n)
-    (lock-object bv)
-    (define pointer (bytevector-pointer bv))
-    (let loop ()
-      (let ((out (socket-%recv fd pointer n 0)))
-        (if (fx=? out -1)
-            (let ((code (socket-errno)))
-              (if (= code EWOULDBLOCK)
-                  (begin
-                    (abort-to-prompt fd 'read)
-                    (loop))
-                  (error 'socket (socket-strerror code))))
-            (begin
-              (unlock-object bv)
-              out)))))
+    (define (queue-snapshot-and-nullify)
+      ;; TODO: use box-cas!
+      (with-mutex (untangle-mutex untangle)
+        (let ((queue (untangle-queue untangle)))
+          (untangle-queue! untangle '())
+          queue)))
 
-  (define (socket-generator fd)
-    ;; XXX: This is a generator, hence it is stateful.  It will keep
-    ;; trying to read until an error is raised.
-    (let* ((bv (make-bytevector 1024))
-           (index 0)
-           (count (read fd bv 0 1024)))
+    (define (call-or-keep time+thunk)
+      (if (time<=? (car time) time)
+          ;; A green thread wants to wake up!
+          (begin
+            ;; Call the registred thunk
+            ((cdr time+thunk))
+            ;; There is no need to call this thunk in the future,
+            ;; because it was already called.
+            #f)
+          time+thunk))
+
+    (define (filter-map proc lst)
+      (let loop ((lst lst)
+                 (out '()))
+        (if (null? lst)
+            out
+            (let ((keep? (proc (car lst))))
+              (if keep?
+                  (loop (cdr lst) (cons (car lst) out))
+                  (loop (cdr lst) out))))))
+
+    (define waiting (queue-snapshot-and-nullify))
+    (define pending (filter-map call-or-keep waiting))
+
+    ;; TODO: use box-cas!
+    (with-mutex (untangle-mutex untangle)
+      (let ((queue (untangle-queue untangle)))
+        (untangle-queue! untangle
+                         (append pending (untangle-queue queue))))))
+
+  (define (untangle-exec-network-continuation untangle)
+    (entangle-continue (untangle-entangle untangle)))
+
+  ;; channel
+
+  (define-record-type <untangle-channel>
+    (make-untangle-channel% untangle mutex inbox subscribers condition-mutex condition)
+    untangle-channel?
+    (untangle channel-untangle)
+    (mutex channel-mutex)
+    (inbox channel-inbox channel-inbox!)
+    (subscribers channel-subscribers channel-subscribers!)
+    (condition-mutex channel-condition-mutex)
+    (condition channel-condition))
+
+  (define (untangle-make-channel untangle)
+    (make-untangle-channel% untangle
+                            (make-mutex)
+                            '()
+                            '()
+                            (make-mutex)
+                            (make-condition)))
+
+  (define untangle-closing-singleton '(untangle-closing-singleton))
+
+  (define (untangle-channel-send channel obj)
+    (define (subscribers-pop!)
+      ;; TODO: use box-cas!
+      (with-mutex (channel-mutex channel)
+        (let ((subscribers (channel-subscribers channel)))
+          (if (null? subscribers)
+              #f
+              (let ((subscriber (car subscribers)))
+                (channel-subscribers! channel (cdr subscribers))
+                subscriber)))))
+
+    (define (inbox-cons!)
+      ;; TODO: use box-cas!
+      (with-mutex (channel-mutex channel)
+        (channel-inbox! channel
+                        (cons obj
+                              (channel-inbox channel)))))
+
+    (define subscriber (subscribers-pop!))
+
+    (if subscriber
+        (subscriber obj)
+        (inbox-cons!)))
+
+  (define (untangle-channel-recv untangle channel obj)
+    (if (eq? (untangle-status (channel-untangle)) 'stopping)
+        untangle-closing-singleton
+        (if (untangled?)
+            (channel-recv-with-untangle untangle channel obj)
+            (channel-recv-without-untangle channel obj))))
+
+  (define inbox-empty '(inbox-empty))
+
+  (define (channel-recv-with-untangle untangle channel obj)
+    (define (inbox-pop!)
+      ;; TODO: use box-cas!
+      (with-mutex (channel-mutex channel)
+        (let ((inbox (channel-inbox channel)))
+          (if (null? inbox)
+              inbox-empty
+              (let ((obj (car inbox)))
+                (channel-inbox! channel (cdr inbox))
+                obj)))))
+
+    (define (spawn subscriber)
+      (lambda (obj)
+        (untangle-spawn untangle (lambda () (subscriber obj)))))
+
+    (define (subscribe! subscriber)
+      ;; TODO: use box-cas!
+      ;; subscriber is the continuation of subscribe-and-pause!
+      (with-mutex (channel-mutex channel)
+        (channel-subscribers! channel
+                              (cons (spawn subscriber)
+                                    (channel-subscribers channel)))))
+
+    (define (subscribe-and-pause!)
+      ;; subscribe! is the escape handler, it is passed the
+      ;; continuation of subscribe-and-pause! which eventually produce
+      ;; the return value of untangle-channel-recv.
+      (untangle-escape untangle subscribe!))
+
+    (define obj (inbox-pop!))
+
+    (if (eq? obj inbox-empty)
+        (subscribe-and-pause!)
+        obj))
+
+  (define (channel-recv-without-untangle channel obj)
+
+    (define (inbox-pop!)
+      ;; TODO: use box-cas!
+      (with-mutex (channel-mutex channel)
+        (let ((inbox (channel-inbox channel)))
+          (if (null? inbox)
+              inbox-empty
+              (let ((obj (car inbox)))
+                (channel-inbox! channel (cdr inbox))
+                obj)))))
+
+    (define (wait-and-return!)
+      (with-mutex (channel-condition-mutex channel)
+        (condition-wait (channel-condition channel)
+                        (channel-condition-mutex channel))
+        (inbox-pop!)))
+
+    (define obj (inbox-pop!))
+
+    (if (eq? obj inbox-empty)
+        (wait-and-return!)
+        obj))
+
+  (define (list->generator lst)
+    (lambda ()
+      (if (null? lst)
+          (eof-object)
+          (let ((head (lst)))
+            (set! lst (cdr lst))
+            head))))
+
+  (define (generator-any? generator)
+    (let ((item (generator)))
+      (if (eof-object? item)
+          #f
+          (if item
+              #t
+              (generator-any? generator)))))
+
+  (define (generator-map proc generator)
+    (lambda ()
+      (let ((item (generator)))
+        (if (eof-object? item)
+            item
+            (proc item)))))
+
+  (define (channel-select untangle channels)
+
+    (define (channel-stopping? channel)
+      (eq? (untangle-status (channel-untangle)) 'stopping))
+
+    (define (stopping?)
+      (generator-any?
+       (generator-map channel-stopping?
+                      (list->generator channels))))
+
+    (if (stopping?)
+        untangle-closing-singleton
+        (if (untangled?)
+            (select-with-untangle untangle channels)
+            (select-without-untangle channels))))
+
+  (define (select-with-untangle untangle channels)
+
+    (define (inboxes-pop!)
+      (let loop ((channels channels))
+        (if (null? channels)
+            (values #f #f)
+            (let ((channel (car channels)))
+              (with-mutex (channel-mutex channel)
+                (if (null? (channel-inbox channel))
+                    (loop (cdr channels))
+                    (let ((obj (car (channel-inbox channel))))
+                      (channel-inbox! channel
+                                      (cdr (channel-inbox channel)))
+                      (values channel obj))))))))
+
+    (define (unsub-and-continue channel obj subscriber)
       (lambda ()
-        (if (fx=? index count)
-            ;; That is the end of the previous bytevector, read
-            ;; something and return the first byte.
-            (let* ((count* (read fd bv 0 1024)))
-              (set! index 1)
-              (set! count count*)
-              (bytevector-u8-ref bv 0))
-            ;; The bytevector is not finished, increment and return
-            ;; a byte.
-            (let ((byte (bytevector-u8-ref bv index)))
-              (set! index (fx+ index 1))
-              byte)))))
+        ;; XXX: TODO: unsubscribe in other channels
+        (untangle-spawn untangle
+                        (lambda () (subscriber channel obj)))))
 
-  (define (write fd bv start n)
-    (lock-object bv)
-    (define pointer (bytevector-pointer bv))
-    (let loop ()
-      (let ((out (socket-%send fd pointer n 0)))
-        (if (fx=? out -1)
-            (let ((code (socket-errno)))
-              (if (fx=? code EWOULDBLOCK)
-                  (begin
-                    (abort-to-prompt fd 'read)
-                    (loop))
-                  (error 'socket (socket-strerror code))))
-              (begin
-                (unlock-object bv)
-                out)))))
+    (define (subscribe!! channel subscriber)
+      (with-mutex (channel-mutex channel)
+        (channel-subscribers! channel
+                              (cons (lambda (obj)
+                                      (unsub-and-continue channel
+                                                          obj
+                                                          subscriber))
+                                    (channel-subscribers channel)))))
 
-  (define (socket-accumulator fd)
-    (lambda (bytevector)
-      (write fd something 0 (bytevector-length bytevector))))
+    (define (subscribe! subscriber)
+      (for-each (lambda (channel) (subscribe!! channel subscriber))
+                channels))
 
-  )
+    (define (subscribe-and-pause!)
+      (untangle-escape untangle subscribe!))
+
+    (call-with-values inboxes-pop!
+      (lambda (channel obj)
+        (if channel
+            (values channel obj)
+            (subscribe-and-pause!)))))
+
+  (define (select-without-untangle channels)
+
+    (define (inboxes-pop!)
+      (let loop ((channels channels))
+        (if (null? channels)
+            (values #f #f)
+            (let ((channel (car channels)))
+              (with-mutex (channel-mutex channel)
+                (if (null? (channel-inbox channel))
+                    (loop (cdr channels))
+                    (let ((obj (car (channel-inbox channel))))
+                      (channel-inbox! channel
+                                      (cdr (channel-inbox channel)))
+                      (values channel obj))))))))
+
+    (call-with-values inboxes-pop!
+      (lambda (channel obj)
+        (if channel
+            (values channel obj)
+            (wait-and-return!))))))
