@@ -35,11 +35,11 @@
     (close (entangle-epoll entangle)))
 
   (define-record-type <entangle>
-    (make-entangle% epoll ks)
+    (make-entangle% epoll thunks)
     entangle?
     (epoll entangle-epoll)
     ;; hash-table association events with continuations.
-    (ks entangle-ks))
+    (thunks entangle-thunks))
 
   (define EPOLLIN #x001)
   (define EPOLLOUT #x004)
@@ -124,17 +124,17 @@
                     (scheme-make-hash-table (make-default-comprator))))
 
   (define (entangle-empty? entangle)
-    (scheme-hash-table-empty? (entangle-ks entangle)))
+    (scheme-hash-table-empty? (entangle-thunks entangle)))
 
-  (define (entangle-register-read! entangle fd k)
+  (define (entangle-register-read! entangle fd thunk)
     (assume
-     (not (scheme-hash-table-contains? (entangle-ks entangle)
+     (not (scheme-hash-table-contains? (entangle-thunks entangle)
                                        (cons fd 'read))))
-    (scheme-hash-table-set! (entangle-ks entangle)
+    (scheme-hash-table-set! (entangle-thunks entangle)
                             (cons fd 'read)
-                            k)
+                            thunk)
 
-    (if (scheme-hash-table-contains? (entangle-ks entangle)
+    (if (scheme-hash-table-contains? (entangle-thunks entangle)
                                      (cons fd 'write))
         ;; modify existing event
         (epoll-ctl (entangle-epoll entangle)
@@ -147,14 +147,14 @@
                    fd
                    (make-epoll-read-event fd))))
 
-  (define (entangle-register-write! entangle fd k)
+  (define (entangle-register-write! entangle fd thunk)
     (assume
-     (not (scheme-hash-table-contains? (entangle-ks entangle)
+     (not (scheme-hash-table-contains? (entangle-thunks entangle)
                                        (cons fd 'write))))
-    (scheme-hash-table-set! (entangle-ks entangle)
+    (scheme-hash-table-set! (entangle-thunks entangle)
                             (cons fd 'write)
-                            k)
-    (if (scheme-hash-table-contains? (entangle-ks entangle)
+                            thunk)
+    (if (scheme-hash-table-contains? (entangle-thunks entangle)
                                      (cons fd 'read))
         ;; modify existing event
         (epoll-ctl (entangle-epoll entangle)
@@ -169,9 +169,9 @@
 
 
     (define (entangle-unregister-read! entangle fd)
-      (assume (scheme-hash-table-contains? (entangle-ks entangle)
+      (assume (scheme-hash-table-contains? (entangle-thunks entangle)
                                            (cons fd 'read)))
-      (if (scheme-hash-table-contains? (entangle-ks entangle)
+      (if (scheme-hash-table-contains? (entangle-thunks entangle)
                                        (cons fd 'write))
           ;; modify existing event
           (epoll-ctl (entangle-epoll entangle)
@@ -186,9 +186,9 @@
 
 
     (define (entangle-unregister-write! entangle fd)
-      (assume (scheme-hash-table-contains? (entangle-ks entangle)
+      (assume (scheme-hash-table-contains? (entangle-thunks entangle)
                                            (cons fd 'read)))
-      (if (scheme-hash-table-contains? (entangle-ks entangle)
+      (if (scheme-hash-table-contains? (entangle-thunks entangle)
                                        (cons fd 'read))
           ;; modify existing event
           (epoll-ctl (entangle-epoll entangle)
@@ -208,15 +208,16 @@
         (foreign-alloc (fx* (ftype-sizeof epoll-event) maxevents)))
 
       (define (call-continuations events count index)
+        (define ref scheme-hash-table-ref)
         (define fd (epoll-event-fd events index))
         (let loop ((types (epoll-event-types events index)))
           (if (null? types)
               (let ((index (fx+ index 1)))
                 (unless (fx=? index count)
                   (call-continuations events count index)))
-              (let ((k (ref (entangle-ks entangle) (cons fd (car types)))))
-                (k) ;; Call the continuation associated with the pair
-                ;; (fd . event-type)
+              (let ((thunk (ref (entangle-thunks entangle)
+                                (cons fd (car types)))))
+                (thunk) ;; Call associated continuation.
                 (loop (cdr types))))))
 
       (let loop0 ()

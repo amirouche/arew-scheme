@@ -3,7 +3,8 @@
 
 `untangle` is cooperative event-loop that does not expose
 continuations (aka. callbacks) and where procedures are [not
-colored](https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/). That can be achieved thanks to `call/cc`.
+colored](https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/). That
+can be achieved thanks to `call/cc`.
 
 > **Note:** Understanding what is `call/cc` and how to use it is not
 > necessary to use this library.
@@ -28,7 +29,7 @@ POSIX threads.
 
 On top of `untangle` is implemented the HTTP library `hyperserver`.
 
-This library exposes four new types with constructors and predicates:
+This library exposes six new types with constructors and predicates:
 
 - `make-untangle`, and `untangle?`
 - `make-untangle-channel` and `untangle-channel?`
@@ -39,6 +40,14 @@ This library exposes four new types with constructors and predicates:
 
 Also, `untangle-accept` will produce an object that satisfy the
 predicate `untangle-connection-socket?`.
+
+- related: http://cml.cs.uchicago.edu/pages/cml.html
+- related: http://mumble.net/~campbell/darcs/scheme-cml/
+- related: https://docs.python.org/fr/3.9/library/asyncio.html
+- related: https://github.com/polytypic/poc.cml
+- related: https://github.com/wingo/fibers
+- related: https://gitlab.com/weinholt/loko/-/blob/master/runtime/fibers.sls
+- related: https://www.microsoft.com/en-us/research/wp-content/uploads/2009/09/Parallel-Concurrent-ML.pdf
 
 ### `(untangle-accept socket)`
 
