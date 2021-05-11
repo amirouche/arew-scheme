@@ -12,7 +12,7 @@ okvslite:
 	mkdir -p local/lib
 	rm -rf local/src/sqlite
 	cd $(PREFIX)/local/src && git clone --depth=1 https://github.com/sqlite/sqlite/
-	cd $(PREFIX)/local/src/sqlite && cp ../MakefileLSM .
+	cp ./patches/MakefileLSM $(PREFIX)/local/src/sqlite
 	cd $(PREFIX)/local/src/sqlite/ && make -f MakefileLSM lsm.so
 	cd $(PREFIX)/local/src/sqlite/ && cp lsm.so ../../lib/
 

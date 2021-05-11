@@ -25,7 +25,7 @@
          (syntax-rules ()
            ((keyword args ...) body))))))
 
-  (define-syntax-rule (bytevector->pointer bv)
+  (define-syntax-rule (bytevector-pointer bv)
     (#%$object-address bv (+ (foreign-sizeof 'void*) 1)))
 
   (define-syntax-rule (with-lock objs body ...)
@@ -39,13 +39,10 @@
   ;; ffi helpers
 
   (define-syntax-rule (make-double-pointer)
-    (bytevector->pointer (make-bytevector 8)))
+    (bytevector-pointer (make-bytevector 8)))
 
   (define-syntax-rule (dereference  pointer)
     (foreign-ref 'void* pointer 0))
-
-  (define-syntax-rule (ftype->pointer ftype)
-    (ftype-pointer-address ftype))
 
   (define-syntax-rule (foreign-procedure* return ptr args ...)
     (foreign-procedure __collect_safe ptr (args ...) return))
@@ -122,9 +119,9 @@
         (with-lock (list key value)
           (check 'okvslite-insert
                  (proc db
-                       (bytevector->pointer key)
+                       (bytevector-pointer key)
                        (bytevector-length key)
-                       (bytevector->pointer value)
+                       (bytevector-pointer value)
                        (bytevector-length value)))))))
 
   (define okvslite-delete
@@ -133,7 +130,7 @@
         (with-lock (list key)
           (check 'okvslite-delete
                  (proc db
-                       (bytevector->pointer key)
+                       (bytevector-pointer key)
                        (bytevector-length key)))))))
 
   (define okvslite-cursor-open
@@ -164,7 +161,7 @@
         (with-lock (list key)
           (check 'okvslite-cursor-seek
                  (proc cursor
-                       (bytevector->pointer key)
+                       (bytevector-pointer key)
                        (bytevector-length key)
                        (->seek strategy)))))))
 
@@ -204,17 +201,17 @@
           (let* ((data (dereference data*))
                  (length (foreign-ref 'int length* 0))
                  (bytevector (make-bytevector length)))
-            (let loop ((index (- length 1)))
-              (unless (< index 0)
+            (let loop ((index (fx- length 1)))
+              (unless (fx<? index 0)
                 (let ((value (foreign-ref 'unsigned-8 data index)))
                   (bytevector-u8-set! bytevector index value)
-                  (loop (- index 1)))))
+                  (loop (fx- index 1)))))
             bytevector)))))
 
   (define okvslite-cursor-value
     (let ((proc (foreign-procedure* int "lsm_csr_value" void* void* void*)))
       (lambda (cursor)
-        ;; TODO: replace with fixed size bytevector
+        ;; TODO: replace with fixed size bytevector, and avoid copy?
         (let ((data* (make-double-pointer))
               (length* (make-double-pointer)))
           (check 'okvslite-cursor-value (proc cursor data* length*))
@@ -222,11 +219,11 @@
           (let* ((data (dereference data*))
                  (length (foreign-ref 'int length* 0))
                  (bytevector (make-bytevector length)))
-            (let loop ((index (- length 1)))
-              (unless (< index 0)
+            (let loop ((index (fx- length 1)))
+              (unless (fx<? index 0)
                 (let ((value (foreign-ref 'unsigned-8 data index)))
                   (bytevector-u8-set! bytevector index value)
-                  (loop (- index 1)))))
+                  (loop (fx- index 1)))))
             bytevector)))))
 
   (define (db-open filename)
@@ -289,9 +286,9 @@
   (define (compare bytevector other)
     ;; lexicographic comparison
 
-    ;; TODO: The code never needs to have 3 different behaviors it
-    ;; only needs to know whether it is smaller or the same or
-    ;; bigger. In all use of compare there is only two branches.
+    ;; XXX: The code never needs to have 3 different behaviors it only
+    ;; needs to know whether it is smaller or the same or bigger. In
+    ;; all use of compare there is only two branches.
 
     ;; If BYTEVECTOR is before OTHER return -1, if equal return 0,
     ;; otherwise if BYTEVECTOR is after OTHER return 1
