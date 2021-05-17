@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "hyper.dev"
+version = "0.1.0"
+description = ""
+authors = ["Amirouche <amirouche@hyper.dev>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+daiquiri = "^3.0.0"
+Jinja2 = "^2.11.3"
+docopt = "^0.6.2"
+lxml = "^4.6.2"
+feedgen = "^0.9.0"
+Pygments = "^2.8.1"
+mistune = "^0.8.4"
+html2text = "^2020.1.16"
+debug = "^0.3.2"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

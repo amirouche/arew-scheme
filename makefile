@@ -73,3 +73,12 @@ xxx: ## Things that require attention
 
 clean: ## Remove useless files...
 	rm arew-scheme.*
+
+notes: ## Rebuild notes
+	poetry install
+	poetry run ./make-notes.py make https://hyper.dev
+
+notes-dev: ## Rebuild notes for local use
+	poetry install
+	poetry run ./make-notes.py make http://localhost:8000
+	python3 -m http.server
