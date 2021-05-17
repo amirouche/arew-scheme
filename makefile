@@ -74,7 +74,7 @@ xxx: ## Things that require attention
 clean: ## Remove useless files...
 	rm arew-scheme.*
 
-notes: ## Rebuild notes
+notes-release: ## Rebuild notes
 	poetry install
 	poetry run ./make-notes.py make https://hyper.dev
 

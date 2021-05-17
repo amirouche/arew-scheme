@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Ruse Scheme</title><link>http://localhost:8000/feed.xml</link><description>Perfection is the limit.</description><atom:link href="http://localhost:8000/feed.xml" rel="self"/><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><lastBuildDate>Mon, 17 May 2021 18:04:29 +0000</lastBuildDate><item><title>Ruse Scheme shall be</title><link>http://localhost:8000/blog/notes/2021/ruse-scheme-shall-be.html</link><description>&amp;lt;div&amp;gt;&amp;lt;h1&amp;gt;2021/05/17 - Ruse Scheme shall be&amp;lt;/h1&amp;gt;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Ruse Scheme</title><link>https://hyper.dev/feed.xml</link><description>Perfection is the limit.</description><atom:link href="https://hyper.dev/feed.xml" rel="self"/><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><lastBuildDate>Mon, 17 May 2021 18:12:42 +0000</lastBuildDate><item><title>Ruse Scheme shall be</title><link>https://hyper.dev/blog/notes/2021/ruse-scheme-shall-be.html</link><description>&amp;lt;div&amp;gt;&amp;lt;h1&amp;gt;2021/05/17 - Ruse Scheme shall be&amp;lt;/h1&amp;gt;
 &amp;lt;p&amp;gt;Ruse Scheme, formely known as Arew Scheme, is at this stage, a
 collection of Scheme libraries for Chez Scheme. There is a grand
 scheme plan plot machination for it. Read on.&amp;lt;/p&amp;gt;
@@ -96,4 +96,4 @@ License without exceptions.&amp;lt;/p&amp;gt;
 &amp;lt;blockquote&amp;gt;&amp;lt;p&amp;gt;If a system must serve the creative spirit, it must be entirely
 comprehensible by a single individual.&amp;lt;/p&amp;gt;
 &amp;lt;/blockquote&amp;gt;
-&amp;lt;/div&amp;gt;</description><guid isPermaLink="false">http://localhost:8000/blog/notes/2021/ruse-scheme-shall-be.html</guid><pubDate>Mon, 17 May 2021 00:00:00 +0000</pubDate></item></channel></rss>
+&amp;lt;/div&amp;gt;</description><guid isPermaLink="false">https://hyper.dev/blog/notes/2021/ruse-scheme-shall-be.html</guid><pubDate>Mon, 17 May 2021 00:00:00 +0000</pubDate></item></channel></rss>
