@@ -1,6 +1,8 @@
-# Babelia
+# Ruse Scheme
 
 **experimental**
+
+## Babelia
 
 Babelia is a privacy friendly, decentralized, open source, and
 accessible search engine. Search has been an essential part of
@@ -26,15 +28,15 @@ Backend:
 - Chez Scheme (backend language)
 - FoundationDB (database)
 - SQLite LSM extension (database)
-- libtls (bsd project)
+- libtls (bsd project, or curl)
 - zstandard (facebook's compression library)
 - blake3 (?)
 - argon2 (password hashing)
 
 Frontend:
 
-- Gambit Scheme (frontend language)
-- ReactJS (frontend view library)
+- Ruse Scheme (frontend language)
+- preactjs (frontend view library)
 - Bootstrap (frontend styles)
 
 Also:
@@ -43,6 +45,10 @@ Also:
 - nginx (HTTP proxy)
 - Python (tooling)
 - CoCrawler
+
+## License
+
+See `LICENSE` file.
 
 ## Acknowledgements
 
