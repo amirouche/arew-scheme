@@ -76,7 +76,7 @@ clean: ## Remove useless files...
 
 notes-release: ## Rebuild notes
 	poetry install
-	poetry run ./make-notes.py make https://hyper.dev
+	poetry run ./make-notes.py make http://letloop.xyz
 
 notes-dev: ## Rebuild notes for local use
 	poetry install
