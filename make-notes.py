@@ -9,7 +9,6 @@ Usage:
 import logging
 import os
 import sys
-from html import escape as htmlescape
 from pathlib import Path
 
 import daiquiri
@@ -169,9 +168,9 @@ def make(root, base):
         entry.id(url)
         entry.title(post['title'])
         entry.link(href=url)
-        entry.content(htmlescape(post["html"]))
+        entry.content(post["html"], type="html")
         entry.published(post['date'].isoformat())
-    feed.rss_file(str(output))
+    feed.atom_file(str(output))
     log.info('rendering index')
     page = jinja('index.jinja2', os.getcwd(), base=base, posts=posts)
     output = Path(os.getcwd()) / 'index.html'

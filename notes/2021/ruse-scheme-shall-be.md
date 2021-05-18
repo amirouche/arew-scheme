@@ -1,4 +1,4 @@
-# 2021/05/17 - Ruse Scheme shall be
+# 2021/05/18 - Ruse Scheme shall be
 
 Ruse Scheme, formely known as Arew Scheme, is at this stage, a
 collection of Scheme libraries for Chez Scheme. There is a grand

@@ -1,99 +1,99 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Ruse Scheme</title><link>http://letloop.xyz/feed.xml</link><description>Perfection is the limit.</description><atom:link href="http://letloop.xyz/feed.xml" rel="self"/><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><lastBuildDate>Mon, 17 May 2021 18:14:23 +0000</lastBuildDate><item><title>Ruse Scheme shall be</title><link>http://letloop.xyz/blog/notes/2021/ruse-scheme-shall-be.html</link><description>&amp;lt;div&amp;gt;&amp;lt;h1&amp;gt;2021/05/17 - Ruse Scheme shall be&amp;lt;/h1&amp;gt;
-&amp;lt;p&amp;gt;Ruse Scheme, formely known as Arew Scheme, is at this stage, a
+<feed xmlns="http://www.w3.org/2005/Atom"><id>http://letloop.xyz</id><title>Ruse Scheme</title><updated>2021-05-18T11:42:15.243521+00:00</updated><link href="http://letloop.xyz/feed.xml" rel="self"/><generator uri="https://lkiesow.github.io/python-feedgen" version="0.9.0">python-feedgen</generator><subtitle>Perfection is the limit.</subtitle><entry><id>http://letloop.xyz/blog/notes/2021/ruse-scheme-shall-be.html</id><title>Ruse Scheme shall be</title><updated>2021-05-18T11:42:15.243547+00:00</updated><content type="html">&lt;div&gt;&lt;h1&gt;2021/05/18 - Ruse Scheme shall be&lt;/h1&gt;
+&lt;p&gt;Ruse Scheme, formely known as Arew Scheme, is at this stage, a
 collection of Scheme libraries for Chez Scheme. There is a grand
-scheme plan plot machination for it. Read on.&amp;lt;/p&amp;gt;
-&amp;lt;h2&amp;gt;What is a civilization kit?&amp;lt;/h2&amp;gt;
-&amp;lt;p&amp;gt;A civilization kit is a software or set of software that ease the
+scheme plan plot machination for it. Read on.&lt;/p&gt;
+&lt;h2&gt;What is a civilization kit?&lt;/h2&gt;
+&lt;p&gt;A civilization kit is a software or set of software that ease the
 organization of life. So far, there is really one civkit that is
-mostly privateer that includes and is not limited to:&amp;lt;/p&amp;gt;
-&amp;lt;ul&amp;gt;
-&amp;lt;li&amp;gt;Wikimedia project such as Wikipedia, Wikidata, Wiktionary...&amp;lt;/li&amp;gt;
-&amp;lt;li&amp;gt;Google, Facebook, Github, Instagram, Twitter, Reddit, StackOverflow, Quora...&amp;lt;/li&amp;gt;
-&amp;lt;li&amp;gt;Android, iOS, Firefox, Chrome..&amp;lt;/li&amp;gt;
-&amp;lt;li&amp;gt;MacOS, FreeBSD, NetBSD, Windows, Debian, Fedora, Ubuntu...&amp;lt;/li&amp;gt;
-&amp;lt;li&amp;gt;Mastodon, and other projects that rely on activitypub...&amp;lt;/li&amp;gt;
-&amp;lt;/ul&amp;gt;
-&amp;lt;p&amp;gt;And many more... that is only the visible part of Earth software
+mostly privateer that includes and is not limited to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Wikimedia project such as Wikipedia, Wikidata, Wiktionary...&lt;/li&gt;
+&lt;li&gt;Google, Facebook, Github, Instagram, Twitter, Reddit, StackOverflow, Quora...&lt;/li&gt;
+&lt;li&gt;Android, iOS, Firefox, Chrome..&lt;/li&gt;
+&lt;li&gt;MacOS, FreeBSD, NetBSD, Windows, Debian, Fedora, Ubuntu...&lt;/li&gt;
+&lt;li&gt;Mastodon, and other projects that rely on activitypub...&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;And many more... that is only the visible part of Earth software
 system. They are software that aim to ease the the production of
 software or hardware. They are also software that helps with
 governance, provide tools to ease law making process, sustain
-production chain of food, energy, medecine, culture, education...&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;They are a lot of software, and that collection form a civkit.&amp;lt;/p&amp;gt;
-&amp;lt;h2&amp;gt;Is Ruse Scheme a new Scheme?&amp;lt;/h2&amp;gt;
-&amp;lt;p&amp;gt;Yes, and no. It depends what is meant by a new Scheme.&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;Sometime a Scheme is a software that gathers many Scheme libraries,
+production chain of food, energy, medecine, culture, education...&lt;/p&gt;
+&lt;p&gt;They are a lot of software, and that collection form a civkit.&lt;/p&gt;
+&lt;h2&gt;Is Ruse Scheme a new Scheme?&lt;/h2&gt;
+&lt;p&gt;Yes, and no. It depends what is meant by a new Scheme.&lt;/p&gt;
+&lt;p&gt;Sometime a Scheme is a software that gathers many Scheme libraries,
 and rely on existing Scheme to execute their code. That is the case of
-Ruse.&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;Most of the time, a Scheme is a software that interpret and/or compile
+Ruse.&lt;/p&gt;
+&lt;p&gt;Most of the time, a Scheme is a software that interpret and/or compile
 a lot of parentheses that is more or less compatible with RnRS. In
 this regard, Ruse is a Scheme, but it is not completly new. It rely on
 Chez Scheme to produce executables that can be run on a server or a
 desktop. Ruse will support Web Assembly and JavaScript to run Scheme
-in a Web browser.&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;Some Scheme implementation do a little of both, and also deliver
+in a Web browser.&lt;/p&gt;
+&lt;p&gt;Some Scheme implementation do a little of both, and also deliver
 features that go beyond past or current RnRS. Ruse does that, and
-shall reach beyond...&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;The main difference with existing Scheme implementations is not found
-at the programming language level. Ruse is and will stay a Scheme.&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;The main area Ruse try to innovate is the rest: whether it is the the
+shall reach beyond...&lt;/p&gt;
+&lt;p&gt;The main difference with existing Scheme implementations is not found
+at the programming language level. Ruse is and will stay a Scheme.&lt;/p&gt;
+&lt;p&gt;The main area Ruse try to innovate is the rest: whether it is the the
 production or sharing of code, Ruse aim to make it easier than sharing
 a meme. Another area Ruse try to innovate is to state upfront the
-scope of the project.&amp;lt;/p&amp;gt;
-&amp;lt;h2&amp;gt;What are the short term goal of Ruse Scheme?&amp;lt;/h2&amp;gt;
-&amp;lt;p&amp;gt;The short term goal of Ruse Scheme is to build a scalable search
+scope of the project.&lt;/p&gt;
+&lt;h2&gt;What are the short term goal of Ruse Scheme?&lt;/h2&gt;
+&lt;p&gt;The short term goal of Ruse Scheme is to build a scalable search
 engine: Babelia. Babelia will both scale-up and scale-down in terms of
 required hardware. In other words, it may run in the cloud or on a
-Raspberry Pi.&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;That first milestone will demonstrate how to build a distributed Von
+Raspberry Pi.&lt;/p&gt;
+&lt;p&gt;That first milestone will demonstrate how to build a distributed Von
 Neumann architecture that aim to be easier to work with than current
-approaches.&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;This is the first milestone because it is easier than going fully
+approaches.&lt;/p&gt;
+&lt;p&gt;This is the first milestone because it is easier than going fully
 dencentralized first. It will deliver the necessary tools to work with
-the current Internet.&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;The plan is to deliver Babelia in 2022.&amp;lt;/p&amp;gt;
-&amp;lt;h2&amp;gt;What is the next Internet?&amp;lt;/h2&amp;gt;
-&amp;lt;p&amp;gt;The next Internet is an Internet that is more open, more
+the current Internet.&lt;/p&gt;
+&lt;p&gt;The plan is to deliver Babelia in 2022.&lt;/p&gt;
+&lt;h2&gt;What is the next Internet?&lt;/h2&gt;
+&lt;p&gt;The next Internet is an Internet that is more open, more
 decentralized, more accessible, and resting upon the fundamental
-principle.&amp;lt;/p&amp;gt;
-&amp;lt;h2&amp;gt;What is the distributed Von Neumann architecture?&amp;lt;/h2&amp;gt;
-&amp;lt;p&amp;gt;The distributed Von Neumann architecture is like a regular computer
-that rely on multiple commodity computers.&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;It is different from a compute grid, because it is not meant only for
-batch processing.&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;In Babelia, that distributed computer has volatile memory,
+principle.&lt;/p&gt;
+&lt;h2&gt;What is the distributed Von Neumann architecture?&lt;/h2&gt;
+&lt;p&gt;The distributed Von Neumann architecture is like a regular computer
+that rely on multiple commodity computers.&lt;/p&gt;
+&lt;p&gt;It is different from a compute grid, because it is not meant only for
+batch processing.&lt;/p&gt;
+&lt;p&gt;In Babelia, that distributed computer has volatile memory,
 non-volatile memory, possibly vectors or graphics processing units,
-and generic computation units.&amp;lt;/p&amp;gt;
-&amp;lt;p&amp;gt;The goal is to make it easier to build software inside a trusted
-network of computers.&amp;lt;/p&amp;gt;
-&amp;lt;h2&amp;gt;What are the mid term goals of Ruse Scheme?&amp;lt;/h2&amp;gt;
-&amp;lt;p&amp;gt;Mid term goals of Ruse Scheme are three folds:&amp;lt;/p&amp;gt;
-&amp;lt;ul&amp;gt;
-&amp;lt;li&amp;gt;&amp;lt;p&amp;gt;Offer enough tooling to make it easier to create, sell and make a
+and generic computation units.&lt;/p&gt;
+&lt;p&gt;The goal is to make it easier to build software inside a trusted
+network of computers.&lt;/p&gt;
+&lt;h2&gt;What are the mid term goals of Ruse Scheme?&lt;/h2&gt;
+&lt;p&gt;Mid term goals of Ruse Scheme are three folds:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;Offer enough tooling to make it easier to create, sell and make a
 living by producing Scheme code. This includes making it painless to
-interop with existing software.&amp;lt;/p&amp;gt;
-&amp;lt;/li&amp;gt;
-&amp;lt;li&amp;gt;&amp;lt;p&amp;gt;Implement a package manager inspired from Nix, and backed up by
+interop with existing software.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Implement a package manager inspired from Nix, and backed up by
 content-addressable code that can be translated into multiple
 natural languages with the help of a decentralized peer-to-peer
-network.&amp;lt;/p&amp;gt;
-&amp;lt;/li&amp;gt;
-&amp;lt;li&amp;gt;&amp;lt;p&amp;gt;Explore a new operating system desktop paradigm resting upon the
-fundamental principle.&amp;lt;/p&amp;gt;
-&amp;lt;/li&amp;gt;
-&amp;lt;/ul&amp;gt;
-&amp;lt;h2&amp;gt;What is the goal of Ruse Scheme?&amp;lt;/h2&amp;gt;
-&amp;lt;p&amp;gt;The goal of Ruse Scheme is to build a coherant bootstrapable
+network.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Explore a new operating system desktop paradigm resting upon the
+fundamental principle.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;What is the goal of Ruse Scheme?&lt;/h2&gt;
+&lt;p&gt;The goal of Ruse Scheme is to build a coherant bootstrapable
 whole-stack civkit for a sustainable civilization, resting upon the
-fundamental principle.&amp;lt;/p&amp;gt;
-&amp;lt;h2&amp;gt;What is whole-stack?&amp;lt;/h2&amp;gt;
-&amp;lt;p&amp;gt;Whole-stack build upon the full-stack concept to include programming
-databases, and kernels.&amp;lt;/p&amp;gt;
-&amp;lt;h2&amp;gt;What is Ruse Scheme license?&amp;lt;/h2&amp;gt;
-&amp;lt;p&amp;gt;Ruse Scheme is licensed under the Cooperative Non-violent Public
-License without exceptions.&amp;lt;/p&amp;gt;
-&amp;lt;h2&amp;gt;What is the fundamental principle?&amp;lt;/h2&amp;gt;
-&amp;lt;blockquote&amp;gt;&amp;lt;p&amp;gt;If a system must serve the creative spirit, it must be entirely
-comprehensible by a single individual.&amp;lt;/p&amp;gt;
-&amp;lt;/blockquote&amp;gt;
-&amp;lt;/div&amp;gt;</description><guid isPermaLink="false">http://letloop.xyz/blog/notes/2021/ruse-scheme-shall-be.html</guid><pubDate>Mon, 17 May 2021 00:00:00 +0000</pubDate></item></channel></rss>
+fundamental principle.&lt;/p&gt;
+&lt;h2&gt;What is whole-stack?&lt;/h2&gt;
+&lt;p&gt;Whole-stack build upon the full-stack concept to include programming
+databases, and kernels.&lt;/p&gt;
+&lt;h2&gt;What is Ruse Scheme license?&lt;/h2&gt;
+&lt;p&gt;Ruse Scheme is licensed under the Cooperative Non-violent Public
+License without exceptions.&lt;/p&gt;
+&lt;h2&gt;What is the fundamental principle?&lt;/h2&gt;
+&lt;blockquote&gt;&lt;p&gt;If a system must serve the creative spirit, it must be entirely
+comprehensible by a single individual.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/div&gt;</content><link href="http://letloop.xyz/blog/notes/2021/ruse-scheme-shall-be.html" rel="alternate"/><published>2021-05-18T00:00:00+00:00</published></entry></feed>
