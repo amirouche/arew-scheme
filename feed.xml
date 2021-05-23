@@ -1,6 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<feed xmlns="http://www.w3.org/2005/Atom"><id>http://letloop.xyz</id><title>Ruse Scheme</title><updated>2021-05-18T11:42:15.243521+00:00</updated><link href="http://letloop.xyz/feed.xml" rel="self"/><generator uri="https://lkiesow.github.io/python-feedgen" version="0.9.0">python-feedgen</generator><subtitle>Perfection is the limit.</subtitle><entry><id>http://letloop.xyz/blog/notes/2021/ruse-scheme-shall-be.html</id><title>Ruse Scheme shall be</title><updated>2021-05-18T11:42:15.243547+00:00</updated><content type="html">&lt;div&gt;&lt;h1&gt;2021/05/18 - Ruse Scheme shall be&lt;/h1&gt;
-&lt;p&gt;Ruse Scheme, formely known as Arew Scheme, is at this stage, a
+<feed xmlns="http://www.w3.org/2005/Atom"><id>http://localhost:8000</id><title>Ruse Scheme</title><updated>2021-05-18T00:00:00+00:00</updated><link href="http://localhost:8000/feed.xml" rel="self"/><generator uri="https://lkiesow.github.io/python-feedgen" version="0.9.0">python-feedgen</generator><subtitle>Perfection is the limit.</subtitle><entry><id>http://localhost:8000/notes/2021/ruse-scheme-shall-be.html</id><title>Ruse Scheme shall be</title><updated>2021-05-18T00:00:00+00:00</updated><content type="html">&lt;div&gt;&lt;p&gt;Ruse Scheme, formely known as Arew Scheme, is at this stage, a
 collection of Scheme libraries for Chez Scheme. There is a grand
 scheme plan plot machination for it. Read on.&lt;/p&gt;
 &lt;h2&gt;What is a civilization kit?&lt;/h2&gt;
@@ -96,4 +95,4 @@ License without exceptions.&lt;/p&gt;
 &lt;blockquote&gt;&lt;p&gt;If a system must serve the creative spirit, it must be entirely
 comprehensible by a single individual.&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;/div&gt;</content><link href="http://letloop.xyz/blog/notes/2021/ruse-scheme-shall-be.html" rel="alternate"/><published>2021-05-18T00:00:00+00:00</published></entry></feed>
+&lt;/div&gt;</content><link href="http://localhost:8000/notes/2021/ruse-scheme-shall-be.html" rel="alternate"/><published>2021-05-18T00:00:00+00:00</published></entry></feed>

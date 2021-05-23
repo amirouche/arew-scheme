@@ -83,7 +83,7 @@ blockquote > p {
     background: url(overlay-video-dark.png);
 }
 
-#container {
+.container {
     max-width: 777px;
     background: hsla(0, 0%, 0%, 0.9);
     margin: 100px auto;
@@ -91,28 +91,4 @@ blockquote > p {
     border-radius: 5px;
     box-shadow: 0px 0px 5px black;
     text-align: justify;
-}
-
-.stdout {
-    font-family: Hack, mono, monospace;
-    color: #BBB;
-    margin-bottom: 5px;
-}
-
-.stdin {
-    font-family: Hack, mono, monospace;
-    color: #777;
-    background: hsla(0, 0%, 0%, 0.9);
-    padding: 5px 10px;
-    margin-bottom: 10px;
-}
-
-#input {
-    background: transparent;
-    color: white;
-    border: 1px solid white;
-    width: 100%;
-    padding: 5px 10px;
-    font-family: Hack, mono, monospace;
-    font-size: 20px;
 }

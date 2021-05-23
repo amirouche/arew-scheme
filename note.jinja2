@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="{{ base }}/static/normalize.css">
+    <link rel="stylesheet" href="{{ base }}/static/highlight.css">
+    <link rel="stylesheet" href="{{ base }}/static/styles.css">
+    <title>Ruse Scheme - {{ title }}</title>
+  </head>
+  <body>
+    <div id="overlay">
+    </div>
+    <div class="container">
+      <h1>{{ date.date().isoformat() }} - {{ title }}</h1>
+      {{ html | safe }}
+    </div>
+    <div class="container">
+      <p>You might want to subscribe to the blog <a href="{{ base }}/feed.xml">feed</a>!</p>
+      <p>Go back to the <a href="{{ base }}">homepage</a></p>
+    </div>
+  </body>
+</html>

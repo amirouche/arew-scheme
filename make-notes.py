@@ -16,6 +16,7 @@ from docopt import docopt
 from datetime import datetime
 from datetime import timezone
 from lxml.html import fromstring as string2html
+from lxml.html import tostring as html2string
 from feedgen.feed import FeedGenerator
 
 from jinja2 import Environment
@@ -63,76 +64,33 @@ def make_post_from_markdown(path, base):
     html = '<div>{}</div>'.format(body)
     div = string2html(html)
     try:
-        title = div.xpath('h1/text()')[0]
-    except indexerror:
+        title = div.xpath('h1')[0]
+    except IndexError:
         msg = "seems like there is not title in: %s"
         log.critical(msg, path)
         sys.exit(1)
+    title.getparent().remove(title)
+    title = title.text
     log.debug('title is: %s', title)
-    date = title[:len('2017/03/01')]
-    date = datetime.strptime(date, '%Y/%m/%d')
+    date = title[:len('2017-03-01')]
+    date = datetime.strptime(date, '%Y-%m-%d')
     date = date.replace(tzinfo=timezone.utc)
-    title = title[len('2017/03/01') + 3 :].strip()
+    title = title[len('2017-03-01') + 3 :].strip()
     log.debug('publication date is: %s', date)
+    html = html2string(div, encoding='unicode')
     post = {
         'title': title,
         'date': date,
         'html': html,
         'path': path,
     }
-    log.debug('rendering blog post')
-    page = jinja('post.jinja2', os.getcwd(), base=base, **post)
+    log.debug('rendering blog note')
+    page = jinja('note.jinja2', os.getcwd(), base=base, **post)
     filename = path.name.split('.')
     filename[-1] = 'html'
     filename = '.'.join(filename)
     output = path.parent / filename
     post['filename'] = str(output.relative_to(os.getcwd()))
-    with output.open('w') as f:
-        f.write(page)
-    log.debug('wrote: %s', output)
-    return post
-
-
-def make_post_from_directory(path, base):
-    log.info('directory %r', path)
-    parts = []
-    for subpath in path.glob('*.md'):
-        out = dict(name=subpath.name)
-        parts.append(out)
-        with subpath.open('r') as f:
-            source = f.read()
-        html = markdown(source)
-        html = "<div>{}</div>".format(html)
-        out["html"] = html
-        html = string2html(html)
-        for level in [1,2]:
-            headers = html.xpath('h{}/text()'.format(level))
-            if not headers:
-                continue
-            header = headers[0]
-            out["header"] = header
-            break
-    parts = sorted(parts, key=lambda x: x["name"])
-    first = parts.pop()
-    # compute title and date
-    title = first["header"]
-    date = title[:len('2017/03/01')]
-    date = datetime.strptime(date, '%Y/%m/%d')
-    date = date.replace(tzinfo=timezone.utc)
-    title = title[len('2017/03/01') + 3 :].strip()
-    # sort other files according to the header
-    parts = sorted(parts, key=lambda x: x["header"])
-    html = first["html"] + ''.join(part["html"] for part in parts)
-    post = dict(
-        title=title,
-        date=date,
-        html=html,
-        path=path,
-        filename=path.name,
-    )
-    log.debug('rendering blog post')
-    page = jinja('post.jinja2', os.getcwd(), base=base, **post)
-    output = path / "index.html"
     with output.open('w') as f:
         f.write(page)
     log.debug('wrote: %s', output)
@@ -151,7 +109,7 @@ def make(root, base):
         if str(path).endswith(".md"):
             post = make_post_from_markdown(path, base)
         if path.is_dir():
-            post = make_post_from_directory(path, base)
+            raise NotImplementedError()
         posts.append(post)
     posts.sort(key=lambda x: x['date'], reverse=True)
     # populate feed
@@ -162,14 +120,16 @@ def make(root, base):
     feed.title('Ruse Scheme')
     feed.subtitle('Perfection is the limit.')
     feed.link(href=base + '/feed.xml', rel='self')
+    feed.updated(posts[0]["date"])
     for post in posts:
         entry = feed.add_entry()
-        url = base + '/blog/' + post['filename']
+        url = base + '/' + post['filename']
         entry.id(url)
         entry.title(post['title'])
         entry.link(href=url)
         entry.content(post["html"], type="html")
         entry.published(post['date'].isoformat())
+        entry.updated(post["date"])
     feed.atom_file(str(output))
     log.info('rendering index')
     page = jinja('index.jinja2', os.getcwd(), base=base, posts=posts)
