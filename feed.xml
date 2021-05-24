@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<feed xmlns="http://www.w3.org/2005/Atom"><id>http://localhost:8000</id><title>Ruse Scheme</title><updated>2021-05-18T00:00:00+00:00</updated><link href="http://localhost:8000/feed.xml" rel="self"/><generator uri="https://lkiesow.github.io/python-feedgen" version="0.9.0">python-feedgen</generator><subtitle>Perfection is the limit.</subtitle><entry><id>http://localhost:8000/notes/2021/ruse-scheme-shall-be.html</id><title>Ruse Scheme shall be</title><updated>2021-05-18T00:00:00+00:00</updated><content type="html">&lt;div&gt;&lt;p&gt;Ruse Scheme, formely known as Arew Scheme, is at this stage, a
+<feed xmlns="http://www.w3.org/2005/Atom"><id>http://localhost:8000</id><title>Ruse Scheme</title><updated>2021-05-23T00:00:00+00:00</updated><link href="http://localhost:8000/feed.xml" rel="self"/><generator uri="https://lkiesow.github.io/python-feedgen" version="0.9.0">python-feedgen</generator><subtitle>Perfection is the limit.</subtitle><entry><id>http://localhost:8000/notes/2021/ruse-scheme-shall-be.html</id><title>Ruse Scheme shall be</title><updated>2021-05-18T00:00:00+00:00</updated><content type="html">&lt;div&gt;&lt;p&gt;Ruse Scheme, formely known as Arew Scheme, is at this stage, a
 collection of Scheme libraries for Chez Scheme. There is a grand
 scheme plan plot machination for it. Read on.&lt;/p&gt;
 &lt;h2&gt;What is a civilization kit?&lt;/h2&gt;
@@ -95,4 +95,241 @@ License without exceptions.&lt;/p&gt;
 &lt;blockquote&gt;&lt;p&gt;If a system must serve the creative spirit, it must be entirely
 comprehensible by a single individual.&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;/div&gt;</content><link href="http://localhost:8000/notes/2021/ruse-scheme-shall-be.html" rel="alternate"/><published>2021-05-18T00:00:00+00:00</published></entry></feed>
+&lt;/div&gt;</content><link href="http://localhost:8000/notes/2021/ruse-scheme-shall-be.html" rel="alternate"/><published>2021-05-18T00:00:00+00:00</published></entry><entry><id>http://localhost:8000/notes/2021/compiling-to-web-assembly-with-javascript-interop.html</id><title>Compiling to Web Assembly with JavaScript interop</title><updated>2021-05-23T00:00:00+00:00</updated><content type="html">&lt;div&gt;&lt;p&gt;I will try to describe a compilation strategy inspired from [0][1][2]
+that is adapted to work with Web Assembly (wasm). Unlike Schism [3],
+and Cyclone [4], it is possible to interop a wasm module that is
+restricted to a single exported function, and JavaScript to handle
+HTML DOM (that includes the canvas) and XHR events (io events)
+&lt;strong&gt;without polling&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;[0] &lt;a href="http://schemeworkshop.org/2006/11-ghuloum.pdf"&gt;An Incremental Approach to Compiler Construction, A. Ghuloum&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;[1] &lt;a href="https://nanopass.org/"&gt;Nanopass framework, A. Keep et al.&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;[2] &lt;a href="https://github.com/akeep/scheme-to-c"&gt;scheme-to-c, A. Keep&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;[3] &lt;a href="https://github.com/google/schism/"&gt;google/schism, E. Holk et al.&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;[4] &lt;a href="https://github.com/justinethier/cyclone/"&gt;Cyclone Scheme, J. Ethier&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;With the following compilation strategy it is possible to implement a
+function similar to POSIX &lt;code&gt;select&lt;/code&gt; [5] and &lt;code&gt;epoll&lt;/code&gt; [6] that is more
+efficient and more reactive than polling.&lt;/p&gt;
+&lt;p&gt;[5] &lt;a href="https://manpages.debian.org/buster/manpages-dev/select.2.en.html"&gt;select(2)&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;[6] &lt;a href="https://manpages.debian.org/stretch/manpages/epoll.7.en.html"&gt;epoll(7)&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;My approach is not an alternative to emscripten asyncify [7][8].&lt;/p&gt;
+&lt;p&gt;[7] &lt;a href="https://emscripten.org/docs/porting/asyncify.html"&gt;Asyncify&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;[8] &lt;a href="https://web.dev/asyncify/"&gt;Using asynchronous web APIs from WebAssembly&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The strategy that will described may be useful beyond Scheme, and LISP.&lt;/p&gt;
+&lt;h2&gt;What is &lt;code&gt;select&lt;/code&gt;, &lt;code&gt;epoll&lt;/code&gt; or &lt;code&gt;event-wait&lt;/code&gt;?&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;select&lt;/code&gt;, &lt;code&gt;epoll&lt;/code&gt; and even &lt;code&gt;io_uring&lt;/code&gt; are Linux machinery that will
+pause the application with a timeout, until an event occurs, which
+ever comes first. Those are the hearth of event loops such as libuv.
+they are mostly used in networked application, including web browsers.
+That machinery will &lt;em&gt;pause&lt;/em&gt; the application, in the sense it will make
+a minimal use of cpu and memory until something happens.&lt;/p&gt;
+&lt;p&gt;To ease the explanation, I will forgo &lt;code&gt;select&lt;/code&gt; and &lt;code&gt;epoll&lt;/code&gt;, instead I
+will introduce &lt;code&gt;(event-wait events)&lt;/code&gt; procedure. So, &lt;code&gt;event-wait&lt;/code&gt; is a
+procedure (or if you prefer a function) that will pause the current
+application, until one or more events from &lt;code&gt;EVENTS&lt;/code&gt; are complete. In
+the context of POSIX, other threads or processus may proceed as usual,
+they will even have more room to do their work. In the context of a
+wasm module inside a web browser, it means that wasm will yield
+control back to JavaScript.  An event in &lt;code&gt;EVENTS&lt;/code&gt; may be a timeout, a
+network or disk operation, or like in the case of the web browser and
+more generally any interactive user interface, the application might
+wait for user input to proceed.&lt;/p&gt;
+&lt;p&gt;At this stage, most people targeting wasm in the web browser will call
+the equivalent of &lt;code&gt;event-wait&lt;/code&gt; once per frame. That strategy makes
+sense for games where JavaScript only needs to forward canvas click or
+move events at a predictable frame rate. What if, the application is
+mostly sleepy, such as the case of single page applications. In that
+case JavaScript can keep the control and call wasm only when needed.
+There is fatal flow with the latter approach, wasm code may need to do
+a network call, in that case the wasm function will not return the
+requested result such as the description of the new dom, but one or
+more HTTP requets that must be done by JavaScript.&lt;/p&gt;
+&lt;p&gt;Web Assembly needs a way to pause and JavaScript needs a way to resume.&lt;/p&gt;
+&lt;p&gt;My informal proposal was to add &lt;code&gt;pause&lt;/code&gt; to web assembly standard [9],
+but it does not work in the general case [10].&lt;/p&gt;
+&lt;p&gt;[9] &lt;a href="https://github.com/WebAssembly/design/issues/1294"&gt;Ability to pause wasm execution&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;[10] &lt;a href="https://github.com/WebAssembly/meetings/tree/main/stack"&gt;Web Assembly stack subgroup meetings&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;What works is restricted wasm module with a single entry-point, that
+start the application the first time, wasm can pause itself, then
+JavaScript can resume wasm by calling the single entry point.&lt;/p&gt;
+&lt;p&gt;Given a wasm &lt;code&gt;pause&lt;/code&gt;, and a JavaScript &lt;code&gt;resume&lt;/code&gt; it is possible to
+implement &lt;code&gt;event-wait&lt;/code&gt;, &lt;code&gt;epoll&lt;/code&gt; or &lt;code&gt;select&lt;/code&gt;.&lt;/p&gt;
+&lt;h2&gt;Know your target!&lt;/h2&gt;
+&lt;p&gt;In this note, I will not dive much into wasm language. Suffice to say,
+you really need to start with learning web assembly and even write
+web assembly yourself before trying to create a compiler.&lt;/p&gt;
+&lt;p&gt;The gist of the compilation strategy rely on a global
+Continuation-Passing-Style transformation [11] and a trampoline [12].&lt;/p&gt;
+&lt;p&gt;[11] &lt;a href="https://en.wikipedia.org/wiki/Continuation-passing_style"&gt;https://en.wikipedia.org/wiki/Continuation-passing_style&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;[12] &lt;a href="https://en.wikipedia.org/wiki/Trampoline_(computing"&gt;https://en.wikipedia.org/wiki/Trampoline_(computing&lt;/a&gt;)&lt;/p&gt;
+&lt;p&gt;A consequence of those two requirements, tail calls do not grow the
+stack, and call/cc is trivial to implement hence exceptions,
+generators, coroutines, amb... [13]&lt;/p&gt;
+&lt;p&gt;[13] &lt;a href="https://en.wikipedia.org/wiki/Call-with-current-continuation"&gt;https://en.wikipedia.org/wiki/Call-with-current-continuation&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;In terms of wasm, it is possible to translate a standard wasm module
+with the addition of the wasm function &lt;code&gt;(pause/continuation (func.ref
+$myfunc))&lt;/code&gt;, given function references, and either mutable globals or
+multiple value returns. The generated wasm code can run with nodejs 14
+and the v8 flags &lt;code&gt;--experimental-wasm-anyref --experimental-wasm-mv&lt;/code&gt;.
+And, it can run with spidermonkey's jsshell nightly without flags.&lt;/p&gt;
+&lt;p&gt;I will describe further down how to translate with Scheme
+source-to-source transformation in the spirit of nanopass compiler.&lt;/p&gt;
+&lt;p&gt;Here is the pseudo-code of the only wasm function that is exported
+by the web assembly module aka. single entry-point:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;resume&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;False&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;trampoline&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="n"&gt;resume&lt;/span&gt;
+    &lt;span class="n"&gt;continuation&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;resume&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;resume&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="n"&gt;main&lt;/span&gt;
+    &lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="kc"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;pause&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;continuation&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;continuation&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;pause&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;resume&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;continuation&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Here is the same function using Scheme:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="nv"&gt;resume&lt;/span&gt; &lt;span class="no"&gt;#f&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;trampoline&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;let &lt;/span&gt;&lt;span class="nv"&gt;loop&lt;/span&gt; &lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="nf"&gt;continuation&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;if &lt;/span&gt;&lt;span class="nv"&gt;resume&lt;/span&gt; &lt;span class="nv"&gt;resume&lt;/span&gt; &lt;span class="nv"&gt;main&lt;/span&gt;&lt;span class="p"&gt;)))&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;call-with-values &lt;/span&gt;&lt;span class="nv"&gt;continuation&lt;/span&gt;
+      &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;lambda &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;pause?&lt;/span&gt; &lt;span class="nv"&gt;continuation&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;if &lt;/span&gt;&lt;span class="nv"&gt;pause?&lt;/span&gt;
+            &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;set! &lt;/span&gt;&lt;span class="nv"&gt;resume&lt;/span&gt; &lt;span class="nv"&gt;continuation&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;loop&lt;/span&gt; &lt;span class="nv"&gt;continuation&lt;/span&gt;&lt;span class="p"&gt;))))))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Given the following frontend Scheme code:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;frob&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt; &lt;span class="nv"&gt;c&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;values &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+ &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="nv"&gt;c&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;It is translated to a subset of Scheme that is eventually translated
+to wasm, that looks like the following:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;frob&lt;/span&gt; &lt;span class="nv"&gt;cl&lt;/span&gt; &lt;span class="nv"&gt;k&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;stack-ref&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="nv"&gt;b&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;stack-ref&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="nv"&gt;c&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;stack-ref&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="nv"&gt;out&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+ &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;stack-set!&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="nv"&gt;out&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;stack-set!&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="nv"&gt;c&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;values &lt;/span&gt;&lt;span class="no"&gt;#f&lt;/span&gt; &lt;span class="nv"&gt;k&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Where &lt;code&gt;cl&lt;/code&gt; is the closure of &lt;code&gt;frob&lt;/code&gt;, in that case it is empty. And &lt;code&gt;k&lt;/code&gt;
+is the continuation of the caller. Arguments and return values are
+passed with a stack that is in web assembly a table of &lt;code&gt;externref&lt;/code&gt;.
+The boolean &lt;code&gt;#f&lt;/code&gt; in &lt;code&gt;values&lt;/code&gt; correspond to &lt;code&gt;pause?&lt;/code&gt; in &lt;code&gt;trampoline&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;To pause Scheme, there is a form &lt;code&gt;(pause/continuation proc)&lt;/code&gt; that is
+translated into &lt;code&gt;(values #t proc-closure)&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;In the following sections I will describe all the steps that are
+sufficent to compile the following code that computes fibonacci in a
+loop:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;fibonacci&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;if &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;fxzero?&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="nv"&gt;a&lt;/span&gt;
+      &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;fibonacci&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;fx+&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;fx-&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;))))&lt;/span&gt;
+
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;generate-positive-integers-from&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="c1"&gt;;; it will generate all integers from `n` to `0` both are excluded.&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;lambda &lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;if &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;fxzero?&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="no"&gt;#f&lt;/span&gt;
+        &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;begin&lt;/span&gt;
+          &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;set! &lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;fx-&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+          &lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="p"&gt;))))&lt;/span&gt;
+
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;run&lt;/span&gt; &lt;span class="nv"&gt;start&lt;/span&gt; &lt;span class="nv"&gt;generator&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;let* &lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="nf"&gt;start&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;time&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+         &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;iteration&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;generator&lt;/span&gt;&lt;span class="p"&gt;)))&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;if &lt;/span&gt;&lt;span class="nv"&gt;iteration&lt;/span&gt;
+        &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;let* &lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="nf"&gt;start&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;time&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+               &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;out&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;fibonacci&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+               &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;delta&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;fx-&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;time&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="nv"&gt;start&lt;/span&gt;&lt;span class="p"&gt;)))&lt;/span&gt;
+          &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;print&lt;/span&gt; &lt;span class="nv"&gt;out&lt;/span&gt; &lt;span class="nv"&gt;delta&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+          &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;run&lt;/span&gt; &lt;span class="nv"&gt;start&lt;/span&gt; &lt;span class="nv"&gt;generator&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+        &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;print&lt;/span&gt; &lt;span class="s"&gt;"done"&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;fx-&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;time&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="nv"&gt;start&lt;/span&gt;&lt;span class="p"&gt;)))))&lt;/span&gt;
+
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;main&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="nv"&gt;n&lt;/span&gt; &lt;span class="mi"&gt;80&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="nv"&gt;m&lt;/span&gt; &lt;span class="mi"&gt;1000&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;run&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;time&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;generate-positive-integers-from&lt;/span&gt; &lt;span class="nv"&gt;m&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="nv"&gt;n&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And the same program that rely on &lt;code&gt;call/cc&lt;/code&gt; to implement
+&lt;code&gt;generate-positive-integers-from&lt;/code&gt;. Those benchmark programs will not
+use &lt;code&gt;pause/continuation&lt;/code&gt; because I have no clue what a good benchmark
+for &lt;code&gt;pause/continuation&lt;/code&gt; looks like.&lt;/p&gt;
+&lt;h2&gt;Nanostep framework&lt;/h2&gt;
+&lt;p&gt;nanostep framework is inspired from nanopass framework. The former
+should be easier to port to any Scheme that has something like Chibi
+Scheme pattern matching macro called &lt;code&gt;match&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;A step is constructed as follow:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="nv"&gt;my-step&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;make-step!&lt;/span&gt; &lt;span class="s"&gt;"my-step"&lt;/span&gt;
+                            &lt;span class="nv"&gt;my-parent-step&lt;/span&gt;
+                            &lt;span class="nv"&gt;reader-for-my-step&lt;/span&gt;
+                            &lt;span class="nv"&gt;my-step-procedure&lt;/span&gt;
+                            &lt;span class="nv"&gt;my-step-evaler&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Most of the arguments are explicit:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;my-parent-step&lt;/code&gt; is the step that comes before;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;reader-for-my-step&lt;/code&gt; is a procedure that will take a filename as
+input and produce a Scheme expression (s-exp), and most likely but not
+necessarly rely on Scheme &lt;code&gt;read&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;my-step-procedure&lt;/code&gt; is a source-to-source translator powered by
+match. It takes as argument a Scheme expression and produce another
+Scheme expression;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;my-step-evaler&lt;/code&gt; is most of the time a thin wrapper around Scheme
+&lt;code&gt;eval&lt;/code&gt;;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I will only describe the procedures that are &lt;code&gt;my-step-procedure&lt;/code&gt; ie.
+the source-to-source transformer.&lt;/p&gt;
+&lt;p&gt;There is also a helper procedure:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;nanosteps&lt;/span&gt; &lt;span class="nv"&gt;step-source-name&lt;/span&gt; &lt;span class="nv"&gt;step-target-name&lt;/span&gt; &lt;span class="nv"&gt;filename&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="o"&gt;...&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;That will read and evaluate the content of &lt;code&gt;filename&lt;/code&gt; after going
+through all the steps from &lt;code&gt;step-source-name&lt;/code&gt; until
+&lt;code&gt;step-target-name&lt;/code&gt;. It will use the reader of &lt;code&gt;step-source-name&lt;/code&gt; to
+read, and the evaler of &lt;code&gt;step-target-name&lt;/code&gt; to evaluate.&lt;/p&gt;
+&lt;p&gt;Mind the fact, that I wrote source-to-source because Scheme provides
+the necessary forms that allows to keep the program semantic, reduce
+complexity without inventing new forms (if you prefer: keywords). In
+other words, intermediate representations can be easily compiled or
+interpreted with any Scheme. Along the compilation process, &lt;code&gt;(primcall
+proc obj ...)&lt;/code&gt; is used to describe procedures &lt;code&gt;proc&lt;/code&gt; that should be
+present in the evaluation environment. &lt;code&gt;primcall&lt;/code&gt; can be defined in
+Scheme with the following code:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="nv"&gt;primcall&lt;/span&gt; &lt;span class="nv"&gt;apply&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So if &lt;code&gt;(primcall add a b)&lt;/code&gt; appears in the intermediate source, the
+following code must be added as prelude inside the associated evaler:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;add&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+ &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Similarly, the last step, called &lt;code&gt;wasmic&lt;/code&gt;, produce the necessary wasm
+imports.&lt;/p&gt;
+&lt;h2&gt;Wrap with &lt;code&gt;lambda&lt;/code&gt; and print the last expression&lt;/h2&gt;
+&lt;p&gt;It is important to note that a step reader must wrap the program
+with a &lt;code&gt;begin&lt;/code&gt;. So that given the following source file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;frob&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+ &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt; &lt;span class="mi"&gt;40&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;frob&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Will be read as:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;lambda &lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;frob&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+ &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt; &lt;span class="mi"&gt;40&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;frob&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Eventually, &lt;code&gt;nanosteps&lt;/code&gt; will print the result of the last expression
+&lt;code&gt;(frob 1 1)&lt;/code&gt;, that is:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="mi"&gt;42&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The program is wrapped with a &lt;code&gt;lambda&lt;/code&gt; otherwise what &lt;code&gt;read&lt;/code&gt; produce
+is a list of expression such as &lt;code&gt;(e0 en ...)&lt;/code&gt; which means that &lt;code&gt;e0&lt;/code&gt;
+takes as argument &lt;code&gt;en&lt;/code&gt; that does not make a Scheme sense! That is a
+required treatment to top-level, so that steps do not need to special
+case top level: top level is a lambda.&lt;/p&gt;
+&lt;h2&gt;make &lt;code&gt;letrec*&lt;/code&gt; explicit&lt;/h2&gt;
+&lt;p&gt;Inside &lt;code&gt;lambda&lt;/code&gt;, &lt;code&gt;let&lt;/code&gt; and other similar bindings forms, the body may
+start with a set of &lt;code&gt;define&lt;/code&gt;. &lt;code&gt;make-letrec*-explicit&lt;/code&gt; will grab all
+&lt;code&gt;define&lt;/code&gt; and create a &lt;code&gt;letrec*&lt;/code&gt;.&lt;/p&gt;
+&lt;h1&gt;#&lt;/h1&gt;
+&lt;/div&gt;</content><link href="http://localhost:8000/notes/2021/compiling-to-web-assembly-with-javascript-interop.html" rel="alternate"/><published>2021-05-23T00:00:00+00:00</published></entry></feed>

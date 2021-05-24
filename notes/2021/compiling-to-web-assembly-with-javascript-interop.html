@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="http://localhost:8000/static/normalize.css">
+    <link rel="stylesheet" href="http://localhost:8000/static/highlight.css">
+    <link rel="stylesheet" href="http://localhost:8000/static/styles.css">
+    <title>Ruse Scheme - Compiling to Web Assembly with JavaScript interop</title>
+  </head>
+  <body>
+    <div id="overlay">
+    </div>
+    <div class="container">
+      <h1>2021-05-23 - Compiling to Web Assembly with JavaScript interop</h1>
+      <div><p>I will try to describe a compilation strategy inspired from [0][1][2]
+that is adapted to work with Web Assembly (wasm). Unlike Schism [3],
+and Cyclone [4], it is possible to interop a wasm module that is
+restricted to a single exported function, and JavaScript to handle
+HTML DOM (that includes the canvas) and XHR events (io events)
+<strong>without polling</strong>.</p>
+<p>[0] <a href="http://schemeworkshop.org/2006/11-ghuloum.pdf">An Incremental Approach to Compiler Construction, A. Ghuloum</a></p>
+<p>[1] <a href="https://nanopass.org/">Nanopass framework, A. Keep et al.</a></p>
+<p>[2] <a href="https://github.com/akeep/scheme-to-c">scheme-to-c, A. Keep</a></p>
+<p>[3] <a href="https://github.com/google/schism/">google/schism, E. Holk et al.</a></p>
+<p>[4] <a href="https://github.com/justinethier/cyclone/">Cyclone Scheme, J. Ethier</a></p>
+<p>With the following compilation strategy it is possible to implement a
+function similar to POSIX <code>select</code> [5] and <code>epoll</code> [6] that is more
+efficient and more reactive than polling.</p>
+<p>[5] <a href="https://manpages.debian.org/buster/manpages-dev/select.2.en.html">select(2)</a></p>
+<p>[6] <a href="https://manpages.debian.org/stretch/manpages/epoll.7.en.html">epoll(7)</a></p>
+<p>My approach is not an alternative to emscripten asyncify [7][8].</p>
+<p>[7] <a href="https://emscripten.org/docs/porting/asyncify.html">Asyncify</a></p>
+<p>[8] <a href="https://web.dev/asyncify/">Using asynchronous web APIs from WebAssembly</a></p>
+<p>The strategy that will described may be useful beyond Scheme, and LISP.</p>
+<h2>What is <code>select</code>, <code>epoll</code> or <code>event-wait</code>?</h2>
+<p><code>select</code>, <code>epoll</code> and even <code>io_uring</code> are Linux machinery that will
+pause the application with a timeout, until an event occurs, which
+ever comes first. Those are the hearth of event loops such as libuv.
+they are mostly used in networked application, including web browsers.
+That machinery will <em>pause</em> the application, in the sense it will make
+a minimal use of cpu and memory until something happens.</p>
+<p>To ease the explanation, I will forgo <code>select</code> and <code>epoll</code>, instead I
+will introduce <code>(event-wait events)</code> procedure. So, <code>event-wait</code> is a
+procedure (or if you prefer a function) that will pause the current
+application, until one or more events from <code>EVENTS</code> are complete. In
+the context of POSIX, other threads or processus may proceed as usual,
+they will even have more room to do their work. In the context of a
+wasm module inside a web browser, it means that wasm will yield
+control back to JavaScript.  An event in <code>EVENTS</code> may be a timeout, a
+network or disk operation, or like in the case of the web browser and
+more generally any interactive user interface, the application might
+wait for user input to proceed.</p>
+<p>At this stage, most people targeting wasm in the web browser will call
+the equivalent of <code>event-wait</code> once per frame. That strategy makes
+sense for games where JavaScript only needs to forward canvas click or
+move events at a predictable frame rate. What if, the application is
+mostly sleepy, such as the case of single page applications. In that
+case JavaScript can keep the control and call wasm only when needed.
+There is fatal flow with the latter approach, wasm code may need to do
+a network call, in that case the wasm function will not return the
+requested result such as the description of the new dom, but one or
+more HTTP requets that must be done by JavaScript.</p>
+<p>Web Assembly needs a way to pause and JavaScript needs a way to resume.</p>
+<p>My informal proposal was to add <code>pause</code> to web assembly standard [9],
+but it does not work in the general case [10].</p>
+<p>[9] <a href="https://github.com/WebAssembly/design/issues/1294">Ability to pause wasm execution</a></p>
+<p>[10] <a href="https://github.com/WebAssembly/meetings/tree/main/stack">Web Assembly stack subgroup meetings</a></p>
+<p>What works is restricted wasm module with a single entry-point, that
+start the application the first time, wasm can pause itself, then
+JavaScript can resume wasm by calling the single entry point.</p>
+<p>Given a wasm <code>pause</code>, and a JavaScript <code>resume</code> it is possible to
+implement <code>event-wait</code>, <code>epoll</code> or <code>select</code>.</p>
+<h2>Know your target!</h2>
+<p>In this note, I will not dive much into wasm language. Suffice to say,
+you really need to start with learning web assembly and even write
+web assembly yourself before trying to create a compiler.</p>
+<p>The gist of the compilation strategy rely on a global
+Continuation-Passing-Style transformation [11] and a trampoline [12].</p>
+<p>[11] <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">https://en.wikipedia.org/wiki/Continuation-passing_style</a></p>
+<p>[12] <a href="https://en.wikipedia.org/wiki/Trampoline_(computing">https://en.wikipedia.org/wiki/Trampoline_(computing</a>)</p>
+<p>A consequence of those two requirements, tail calls do not grow the
+stack, and call/cc is trivial to implement hence exceptions,
+generators, coroutines, amb... [13]</p>
+<p>[13] <a href="https://en.wikipedia.org/wiki/Call-with-current-continuation">https://en.wikipedia.org/wiki/Call-with-current-continuation</a></p>
+<p>In terms of wasm, it is possible to translate a standard wasm module
+with the addition of the wasm function <code>(pause/continuation (func.ref
+$myfunc))</code>, given function references, and either mutable globals or
+multiple value returns. The generated wasm code can run with nodejs 14
+and the v8 flags <code>--experimental-wasm-anyref --experimental-wasm-mv</code>.
+And, it can run with spidermonkey's jsshell nightly without flags.</p>
+<p>I will describe further down how to translate with Scheme
+source-to-source transformation in the spirit of nanopass compiler.</p>
+<p>Here is the pseudo-code of the only wasm function that is exported
+by the web assembly module aka. single entry-point:</p>
+<div class="highlight"><pre><span></span><span class="n">resume</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="k">def</span> <span class="nf">trampoline</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">resume</span>
+    <span class="n">continuation</span> <span class="o">=</span> <span class="n">resume</span> <span class="k">if</span> <span class="n">resume</span> <span class="k">else</span> <span class="n">main</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">pause</span><span class="p">,</span> <span class="n">continuation</span> <span class="o">=</span> <span class="n">continuation</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">pause</span><span class="p">:</span>
+            <span class="n">resume</span> <span class="o">=</span> <span class="n">continuation</span>
+            <span class="k">return</span>
+</pre></div>
+<p>Here is the same function using Scheme:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="nv">resume</span> <span class="no">#f</span><span class="p">)</span>
+
+<span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">trampoline</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">let </span><span class="nv">loop</span> <span class="p">((</span><span class="nf">continuation</span> <span class="p">(</span><span class="k">if </span><span class="nv">resume</span> <span class="nv">resume</span> <span class="nv">main</span><span class="p">)))</span>
+    <span class="p">(</span><span class="nb">call-with-values </span><span class="nv">continuation</span>
+      <span class="p">(</span><span class="k">lambda </span><span class="p">(</span><span class="nf">pause?</span> <span class="nv">continuation</span><span class="p">)</span>
+        <span class="p">(</span><span class="k">if </span><span class="nv">pause?</span>
+            <span class="p">(</span><span class="k">set! </span><span class="nv">resume</span> <span class="nv">continuation</span><span class="p">)</span>
+            <span class="p">(</span><span class="nf">loop</span> <span class="nv">continuation</span><span class="p">))))))</span>
+</pre></div>
+<p>Given the following frontend Scheme code:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">frob</span> <span class="nv">a</span> <span class="nv">b</span> <span class="nv">c</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">values </span><span class="p">(</span><span class="nb">+ </span><span class="nv">a</span> <span class="nv">b</span><span class="p">)</span> <span class="nv">c</span><span class="p">))</span>
+</pre></div>
+<p>It is translated to a subset of Scheme that is eventually translated
+to wasm, that looks like the following:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">frob</span> <span class="nv">cl</span> <span class="nv">k</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">define </span><span class="nv">a</span> <span class="p">(</span><span class="nf">stack-ref</span> <span class="mi">0</span><span class="p">))</span>
+  <span class="p">(</span><span class="k">define </span><span class="nv">b</span> <span class="p">(</span><span class="nf">stack-ref</span> <span class="mi">1</span><span class="p">))</span>
+  <span class="p">(</span><span class="k">define </span><span class="nv">c</span> <span class="p">(</span><span class="nf">stack-ref</span> <span class="mi">2</span><span class="p">))</span>
+  <span class="p">(</span><span class="k">define </span><span class="nv">out</span> <span class="p">(</span><span class="nb">+ </span><span class="nv">a</span> <span class="nv">b</span><span class="p">))</span>
+  <span class="p">(</span><span class="nf">stack-set!</span> <span class="mi">0</span> <span class="nv">out</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">stack-set!</span> <span class="mi">1</span> <span class="nv">c</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">values </span><span class="no">#f</span> <span class="nv">k</span><span class="p">))</span>
+</pre></div>
+<p>Where <code>cl</code> is the closure of <code>frob</code>, in that case it is empty. And <code>k</code>
+is the continuation of the caller. Arguments and return values are
+passed with a stack that is in web assembly a table of <code>externref</code>.
+The boolean <code>#f</code> in <code>values</code> correspond to <code>pause?</code> in <code>trampoline</code>.</p>
+<p>To pause Scheme, there is a form <code>(pause/continuation proc)</code> that is
+translated into <code>(values #t proc-closure)</code>.</p>
+<p>In the following sections I will describe all the steps that are
+sufficent to compile the following code that computes fibonacci in a
+loop:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">fibonacci</span> <span class="nv">a</span> <span class="nv">b</span> <span class="nv">n</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">if </span><span class="p">(</span><span class="nf">fxzero?</span> <span class="nv">n</span><span class="p">)</span>
+      <span class="nv">a</span>
+      <span class="p">(</span><span class="nf">fibonacci</span> <span class="nv">b</span> <span class="p">(</span><span class="nf">fx+</span> <span class="nv">a</span> <span class="nv">b</span><span class="p">)</span> <span class="p">(</span><span class="nf">fx-</span> <span class="nv">n</span> <span class="mi">1</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">generate-positive-integers-from</span> <span class="nv">n</span><span class="p">)</span>
+  <span class="c1">;; it will generate all integers from `n` to `0` both are excluded.</span>
+  <span class="p">(</span><span class="k">lambda </span><span class="p">()</span>
+    <span class="p">(</span><span class="k">if </span><span class="p">(</span><span class="nf">fxzero?</span> <span class="nv">n</span><span class="p">)</span>
+        <span class="no">#f</span>
+        <span class="p">(</span><span class="nf">begin</span>
+          <span class="p">(</span><span class="k">set! </span><span class="nv">n</span> <span class="p">(</span><span class="nf">fx-</span> <span class="nv">n</span> <span class="mi">1</span><span class="p">))</span>
+          <span class="nv">n</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">run</span> <span class="nv">start</span> <span class="nv">generator</span> <span class="nv">n</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">let* </span><span class="p">((</span><span class="nf">start</span> <span class="p">(</span><span class="nf">time</span><span class="p">))</span>
+         <span class="p">(</span><span class="nf">iteration</span> <span class="p">(</span><span class="nf">generator</span><span class="p">)))</span>
+    <span class="p">(</span><span class="k">if </span><span class="nv">iteration</span>
+        <span class="p">(</span><span class="k">let* </span><span class="p">((</span><span class="nf">start</span> <span class="p">(</span><span class="nf">time</span><span class="p">))</span>
+               <span class="p">(</span><span class="nf">out</span> <span class="p">(</span><span class="nf">fibonacci</span> <span class="mi">0</span> <span class="mi">1</span> <span class="nv">n</span><span class="p">))</span>
+               <span class="p">(</span><span class="nf">delta</span> <span class="p">(</span><span class="nf">fx-</span> <span class="p">(</span><span class="nf">time</span><span class="p">)</span> <span class="nv">start</span><span class="p">)))</span>
+          <span class="p">(</span><span class="nf">print</span> <span class="nv">out</span> <span class="nv">delta</span><span class="p">)</span>
+          <span class="p">(</span><span class="nf">run</span> <span class="nv">start</span> <span class="nv">generator</span> <span class="nv">n</span><span class="p">))</span>
+        <span class="p">(</span><span class="nf">print</span> <span class="s">"done"</span> <span class="p">(</span><span class="nf">fx-</span> <span class="p">(</span><span class="nf">time</span><span class="p">)</span> <span class="nv">start</span><span class="p">)))))</span>
+
+<span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">main</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">define </span><span class="nv">n</span> <span class="mi">80</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">define </span><span class="nv">m</span> <span class="mi">1000</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">run</span> <span class="p">(</span><span class="nf">time</span><span class="p">)</span> <span class="p">(</span><span class="nf">generate-positive-integers-from</span> <span class="nv">m</span><span class="p">)</span> <span class="nv">n</span><span class="p">))</span>
+</pre></div>
+<p>And the same program that rely on <code>call/cc</code> to implement
+<code>generate-positive-integers-from</code>. Those benchmark programs will not
+use <code>pause/continuation</code> because I have no clue what a good benchmark
+for <code>pause/continuation</code> looks like.</p>
+<h2>Nanostep framework</h2>
+<p>nanostep framework is inspired from nanopass framework. The former
+should be easier to port to any Scheme that has something like Chibi
+Scheme pattern matching macro called <code>match</code>.</p>
+<p>A step is constructed as follow:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="nv">my-step</span> <span class="p">(</span><span class="nf">make-step!</span> <span class="s">"my-step"</span>
+                            <span class="nv">my-parent-step</span>
+                            <span class="nv">reader-for-my-step</span>
+                            <span class="nv">my-step-procedure</span>
+                            <span class="nv">my-step-evaler</span><span class="p">))</span>
+</pre></div>
+<p>Most of the arguments are explicit:</p>
+<ul>
+<li><code>my-parent-step</code> is the step that comes before;</li>
+<li><code>reader-for-my-step</code> is a procedure that will take a filename as
+input and produce a Scheme expression (s-exp), and most likely but not
+necessarly rely on Scheme <code>read</code>;</li>
+<li><code>my-step-procedure</code> is a source-to-source translator powered by
+match. It takes as argument a Scheme expression and produce another
+Scheme expression;</li>
+<li><code>my-step-evaler</code> is most of the time a thin wrapper around Scheme
+<code>eval</code>;</li>
+</ul>
+<p>I will only describe the procedures that are <code>my-step-procedure</code> ie.
+the source-to-source transformer.</p>
+<p>There is also a helper procedure:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">nanosteps</span> <span class="nv">step-source-name</span> <span class="nv">step-target-name</span> <span class="nv">filename</span><span class="p">)</span>
+  <span class="o">...</span><span class="p">)</span>
+</pre></div>
+<p>That will read and evaluate the content of <code>filename</code> after going
+through all the steps from <code>step-source-name</code> until
+<code>step-target-name</code>. It will use the reader of <code>step-source-name</code> to
+read, and the evaler of <code>step-target-name</code> to evaluate.</p>
+<p>Mind the fact, that I wrote source-to-source because Scheme provides
+the necessary forms that allows to keep the program semantic, reduce
+complexity without inventing new forms (if you prefer: keywords). In
+other words, intermediate representations can be easily compiled or
+interpreted with any Scheme. Along the compilation process, <code>(primcall
+proc obj ...)</code> is used to describe procedures <code>proc</code> that should be
+present in the evaluation environment. <code>primcall</code> can be defined in
+Scheme with the following code:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="nv">primcall</span> <span class="nv">apply</span><span class="p">)</span>
+</pre></div>
+<p>So if <code>(primcall add a b)</code> appears in the intermediate source, the
+following code must be added as prelude inside the associated evaler:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">add</span> <span class="nv">a</span> <span class="nv">b</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">+ </span><span class="nv">a</span> <span class="nv">b</span><span class="p">))</span>
+</pre></div>
+<p>Similarly, the last step, called <code>wasmic</code>, produce the necessary wasm
+imports.</p>
+<h2>Wrap with <code>lambda</code> and print the last expression</h2>
+<p>It is important to note that a step reader must wrap the program
+with a <code>begin</code>. So that given the following source file:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">frob</span> <span class="nv">a</span> <span class="nv">b</span><span class="p">)</span> <span class="p">(</span><span class="nb">+ </span><span class="nv">a</span> <span class="nv">b</span> <span class="mi">40</span><span class="p">))</span>
+
+<span class="p">(</span><span class="nf">frob</span> <span class="mi">1</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+<p>Will be read as:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">lambda </span><span class="p">()</span>
+  <span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">frob</span> <span class="nv">a</span> <span class="nv">b</span><span class="p">)</span> <span class="p">(</span><span class="nb">+ </span><span class="nv">a</span> <span class="nv">b</span> <span class="mi">40</span><span class="p">))</span>
+
+  <span class="p">(</span><span class="nf">frob</span> <span class="mi">1</span> <span class="mi">1</span><span class="p">))</span>
+</pre></div>
+<p>Eventually, <code>nanosteps</code> will print the result of the last expression
+<code>(frob 1 1)</code>, that is:</p>
+<div class="highlight"><pre><span></span><span class="mi">42</span>
+</pre></div>
+<p>The program is wrapped with a <code>lambda</code> otherwise what <code>read</code> produce
+is a list of expression such as <code>(e0 en ...)</code> which means that <code>e0</code>
+takes as argument <code>en</code> that does not make a Scheme sense! That is a
+required treatment to top-level, so that steps do not need to special
+case top level: top level is a lambda.</p>
+<h2>make <code>letrec*</code> explicit</h2>
+<p>Inside <code>lambda</code>, <code>let</code> and other similar bindings forms, the body may
+start with a set of <code>define</code>. <code>make-letrec*-explicit</code> will grab all
+<code>define</code> and create a <code>letrec*</code>.</p>
+<h1>#</h1>
+</div>
+    </div>
+    <div class="container">
+      <p>You might want to subscribe to the blog <a href="http://localhost:8000/feed.xml">feed</a>!</p>
+      <p>Go back to the <a href="http://localhost:8000">homepage</a></p>
+    </div>
+  </body>
+</html>

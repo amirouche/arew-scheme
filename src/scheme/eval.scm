@@ -4,4 +4,12 @@
 
 (library (scheme eval)
   (export environment eval)
-  (import (rnrs eval)))
+  (import (scheme base)
+          (prefix (only (chezscheme) eval environment copy-environment)
+                  chez-))
+
+  (define eval chez-eval)
+
+  (define (environment . args)
+    (define env (apply chez-environment args))
+    (chez-copy-environment env #t)))
