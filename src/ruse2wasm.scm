@@ -61,11 +61,15 @@
 
   (let loop ((steps steps)
              (exp exp))
-    (pretty-print exp)
+    (newline)
+    (display "exec step: ")
     (pretty-print (step-name (car steps)))
     (if (null? (cdr steps))
-        ((step-evaler (car steps)) ((step-compiler (car steps)) exp))
+        (let ((evaler (step-evaler (car steps)))
+              (exp ((step-compiler (car steps)) exp)))
+          (if evaler (evaler exp) (pretty-print exp)))
         (let ((exp ((step-compiler (car steps)) exp)))
+          (pretty-print exp)
           (loop (cdr steps) exp)))))
 
 (define (reader filename)
@@ -84,7 +88,7 @@
        (define void (lambda () (when #f #f)))
        (define (make-box v) (vector v))
        (define (unbox b) (vector-ref b 0))
-       (define (box-set! b a) (vector-set! b 0 a))
+       (define (box! b a) (vector-set! b 0 a))
        (define time current-jiffy)
        (define (print . args)
          (write args)(newline))
@@ -176,6 +180,80 @@
                                                make-letrec*-explicit
                                                evaler))
 
+
+;; identify
+
+(define primitives
+  '((zero? . 1)
+    (- . 2)
+    (+ . 2)
+    (* . 2)
+    (make-box . 1)
+    (unbox . 1)
+    (box! . 2)
+    (void . 0)
+    (time . 0)
+    (print . 2)
+    (make-closure . 2)
+    (closure-ref . 2)))
+
+(define (primitive? s)
+  (memq s (map car primitives)))
+
+(define (parse-and-rename exp)
+  ;; XXX: primtives are not first-class
+  (define (do exp env)
+
+    (match exp
+      (('lambda (n* ...) e* ...)
+       (let* ((rn* (map unique-var n*))
+              (env* (append (map cons n* rn*) env)))
+         `(lambda ,rn* ,@(map (lambda (e) (do e env*)) e*))))
+
+      (('letrec* ((a* b*) ...) e* ...)
+       (let* ((ra* (map unique-var a*))
+              (env* (append (map cons a* ra*) env)))
+         `(letrec* ,(map (lambda (ra b) (list ra (do b env*))) ra* b*)
+            ,@(map (lambda (e) (do e env*)) e*))))
+
+      (('let* ((a* b*) ...) e* ...)
+       (let loop ((a* a*)
+                  (b* b*)
+                  (bindings '())
+                  (env* env))
+         (if (null? a*)
+             `(let* ,(reverse bindings) ,@(map (lambda (e) (do e env*)) e*))
+             (let* ((a (car a*))
+                    (ra (unique-var a))
+                    (rb (do (car b*) env*))
+                    (env* (cons (cons ra a) env*)))
+               (loop (cdr a*)
+                     (cdr b*)
+                     (cons (list ra rb) bindings)
+                     (cons (cons a ra) env*))))))
+
+      (('let ((a* b*) ...) e* ...)
+       (let* ((ra* (map unique-var a*))
+              (env* (append (map cons a* ra*) env)))
+         `(let ,(map (lambda (ra b) (list ra (do b env))) ra* b*)
+            ,@(map (lambda (e) (do e env*)) e*))))
+
+      (('if e0 e1 e2) `(if ,(do e0 env) ,(do e1 env) ,(do e2 env)))
+
+      (((? primitive? pr) e* ...) `(primcall ,pr ,@(map (lambda (e) (do e env)) e*)))
+      ((e* ...) (map (lambda (e) (do e env)) e*))
+      ((? symbol? s) (cdr (assoc s env)))
+      (e e)))
+
+  (do exp '()))
+
+
+(define parse-and-rename-step (make-step! "parse-and-rename"
+                                          make-letrec*-explicit-step
+                                          reader
+                                          parse-and-rename
+                                          evaler))
+
 ;; convert-letrec*-naive
 
 (define (convert-letrec*-naive exp)
@@ -190,13 +268,13 @@
   (match exp
     (('letrec* ((a* v*) ...) e)
      `(let* ,(map (lambda (a) (list a '(primcall make-box (primcall void)))) a*)
-        ,@(map (lambda (a v) `(primcall box-set! ,a ,(convert-reference-to-unbox a* v))) a* v*)
+        ,@(map (lambda (a v) `(primcall box! ,a ,(convert-reference-to-unbox a* v))) a* v*)
         ,(convert-reference-to-unbox a* e)))
     ((e* ...) (map convert-letrec*-naive e*))
     (e e)))
 
 (define convert-letrec*-naive-step (make-step! "convert-letrec*-naive"
-                                               make-letrec*-explicit-step
+                                               parse-and-rename-step
                                                reader
                                                convert-letrec*-naive
                                                evaler))
@@ -340,11 +418,13 @@
                   (define void (lambda () (when #f #f)))
                   (define (make-box v) (vector v))
                   (define (unbox b) (vector-ref b 0))
-                  (define (box-set! b a) (vector-set! b 0 a))
+                  (define (box! b a) (vector-set! b 0 a))
                   (define time current-jiffy)
                   (define (print . args)
                     (write args)(newline))
                   (define (primcall proc . args) (apply proc args))
+                  (define (make-closure s a) (vector s a))
+                  (define (closure-ref cl i) (vector-ref (vector-ref cl 1) i))
                   (define (zero? x)
                     (= x 0))
                   (define (add a b)
@@ -368,6 +448,526 @@
                              cps
                              cps-evaler))
 
+;; uncover free-variables
 
-(nanosteps "make-letrec*-explicit" "cps" (cadr (command-line)))
+(define (uncover-free-variables exp)
+
+  (define (do exp)
+    (match exp
+      (('primcall pr e* ...)
+       (let loop ((e* e*) (o* '()) (free* '()))
+         (if (null? e*)
+             (values `(primcall ,pr ,@(reverse o*)) free*)
+             (call-with-values (lambda () (do (car e*)))
+               (lambda (o free)
+                 (loop (cdr e*) (cons o o*) (union free free*)))))))
+
+      (('lambda args e* ...)
+       (let loop ((e* e*)
+                  (out* '())
+                  (free* '()))
+         (if (null? e*)
+           (let ((free** (difference free* args)))
+             (values `(lambda ,args (values ,@(map (lambda (f) `',f) free**)) ,@(reverse out*))
+                     free**))
+           (call-with-values (lambda () (do (car e*)))
+             (lambda (out free)
+               (loop (cdr e*)
+                     (cons out out*)
+                     (append free free*)))))))
+
+      (('if e0 e1 e2)
+       (call-with-values (lambda () (do e0))
+         (lambda (e0 free0)
+           (call-with-values (lambda () (do e1))
+             (lambda (e1 free1)
+               (call-with-values (lambda () (do e2))
+                 (lambda (e2 free2)
+                   (values `(if ,e0 ,e1 ,e2) (union free0 free1 free2)))))))))
+
+      ((e* ...)
+       (let loop ((e* e*) (o* '()) (free* '()))
+         (if (null? e*)
+             (values (reverse o*) free*)
+             (call-with-values (lambda () (do (car e*)))
+               (lambda (o free)
+                 (loop (cdr e*) (cons o o*) (union free free*)))))))
+      ((? integer? c) (values c '()))
+      (e (values e (list e)))))
+
+  (call-with-values (lambda () (do exp))
+    (lambda (exp free)
+      (unless (null? free)
+        (error 'ruse2wasm "unbound variables" free))
+      exp)))
+
+(define uncover-free-variables-step
+  (make-step! "uncover-free-variables"
+              cps-step
+              reader
+              uncover-free-variables
+              cps-evaler))
+
+(define (make-closures exp)
+  (match exp
+    (('lambda args ('values f* ...) e* ...)
+     (let ((cl (unique-var 'cl)))
+       `(primcall make-closure (list ,@f*)
+                      (lambda ,(cons cl args)
+                        ,@(map (lambda (f i) `(define ,(cadr f) (primcall closure-ref ,cl ,i)))
+                               f*
+                               (iota (length f*)))
+                        ,@(map make-closures e*)))))
+    ((e* ...) (map make-closures e*))
+    (e e)))
+
+
+(define make-closures-step
+  (make-step! "make-closures"
+              uncover-free-variables-step
+              reader
+              make-closures
+              #f))
+
+;; closure finish
+
+(define (closure-finish exp)
+  (match exp
+    (('define name value)
+     `(define ,name ,value))
+    (('primcall 'make-closure free ('lambda args body ...))
+     `(primcall make-closure ,free (lambda ,args ,@(map closure-finish body))))
+    (('primcall pr e* ...)
+     `(primcall ,pr ,@(map (lambda (e) `(primcall closure-ref ,e 0)) e*)))
+    (('if e0 e1 e2) `(if ,(closure-finish e0) ,(closure-finish e1) ,(closure-finish e2)))
+    (((? symbol? s) e* ...)
+     `(,s ,s ,@(map closure-finish e*)))
+    ((e e* ...)
+     (let ((cl (unique-var 'cl)))
+       `(let ()
+          (define ,cl ,(closure-finish e))
+          (,cl ,cl ,@(map closure-finish e*)))))
+    (e e)))
+
+(define closure-finish-step
+  (make-step! "closure-finish"
+              make-closures-step
+              reader
+              closure-finish
+              #f))
+
+(define (lift-lambda exp)
+
+  (define (named-lambda exp)
+    (match exp
+      (('lambda args e* ...)
+       `(lambda ,(unique-var 'a) ,args ,@(map named-lambda e*)))
+      ((e* ...) (map named-lambda e*))
+      (e e)))
+
+  (define lambdas '())
+
+  (define (do exp)
+    (match exp
+      (('lambda name args e* ...)
+       (set! lambdas (cons (cons name `(lambda ,args ,@(map do e*))) lambdas))
+       name)
+      ((e* ...) (map do e*))
+      (e e)))
+
+  (define program (do (named-lambda exp)))
+
+  `(begin
+     ,@(map (lambda (name+lambda) `(define ,(car name+lambda) ,(cdr name+lambda)))
+            lambdas)
+
+     (define main ,program)))
+
+
+(define lift-lambda-step (make-step! "lift-lambda"
+                                     closure-finish-step
+                                     reader
+                                     lift-lambda
+                                     #f))
+
+(define (trampolinize exp)
+  (define (dodo exp)
+    (match exp
+      (('if e0 e1 e2) `(if ,e0 ,(dodo e1) ,(dodo e2)))
+      (('let '() define (e* ...))
+       `(let () ,define (values ,@e*)))
+      ((e* ...) `(values ,@e*))
+      (e e)))
+
+  (define (do exp)
+    (match exp
+      (('define name ('lambda vars e* ... en))
+       `(define ,name (lambda ,vars ,@e* ,(dodo en))))
+
+      (('define name value)
+       `(define ,name ,value))))
+
+  `(begin ,@(map do (cdr exp))))
+
+(define trampolinize-step (make-step! "trampolinize"
+                                     lift-lambda-step
+                                     reader
+                                     trampolinize
+                                     #f))
+
+(define (mess exp)
+
+  (define (map-lambdas proc exp)
+    (let loop ((exp (cdr exp))
+               (out '()))
+      (if (null? exp)
+          `(begin ,@(reverse out))
+          (match (car exp)
+            (('define name ('lambda args e* ...))
+             (loop (cdr exp)
+                   (cons `(define ,name (lambda ,args ,@(proc e*)))
+                         out)))
+            (('define 'main value)
+             (loop (cdr exp)
+                   (cons `(define main ,value) out)))))))
+
+
+  (define (hoist-simple-let exp)
+    (define (do exp)
+      (match exp
+        (('let () e* ...) e*)
+        (('if e0 e1 e2) (list `(if ,e0 (begin ,@(do e1)) (begin ,@(do e2)))))
+        (e (list e))))
+
+    (map-lambdas (lambda (e) (apply append (map do e))) exp))
+
+  (define (simplify-make-closure exp)
+
+    (define (do e)
+      (match e
+        (('primcall 'make-closure ('list f* ...) a)
+         (let ((cl (unique-var 'cl)))
+           `(let ()
+              (define ,cl (primcall make-closure ,a))
+              ,@(map (lambda (f) `(primcall closure-push ,cl ,(cadr f))) f*)
+              ,cl)))
+        (('define name v)
+         `(define ,name ,(do v)))
+        ((e* ...)
+         (map do e*))
+        (e e)))
+
+
+    (map-lambdas (lambda (e*) (map do e*)) exp))
+
+  (define (simple-values exp)
+
+    (define (dodo e)
+      (match e
+        ((? symbol? s) s)
+        ((? integer? c) c)
+        (e (let ((t (unique-var 't)))
+             `(let ()
+                (define ,t ,e)
+                ,t)))))
+
+    (define (do e)
+      (match e
+        (('values e* ...)
+         `(values ,@(map dodo e*)))
+        (e e)))
+
+    (map-lambdas (lambda (e*) (map do e*)) exp))
+
+  (define (hoist-take-n+1 exp)
+
+    (define (dovalues e*)
+      (let loop ((e* e*)
+                 (v* '())
+                 (out '()))
+        (if (null? e*)
+            (append (reverse out) (list `(values ,@(reverse v*))))
+            (match (car e*)
+              ((? symbol? s) (loop (cdr e*) (cons s v*) out))
+              ((? integer? s) (loop (cdr e*) (cons s v*) out))
+              (('let () x* ... xn)
+               (loop (cdr e*) (cons xn v*) (append x* out)))))))
+
+
+    (define (do exp)
+      (match exp
+        (('values e* ...) (dovalues e*))
+        (('define x v) (list `(define ,x ,v)))
+        (e (list e))))
+
+    (map-lambdas (lambda (e) (apply append (map do e))) exp))
+
+  (define (hoist-take-n+2 exp)
+
+    (define (do exp)
+      (match exp
+        (('define x ('let () e* ... en)) (append e* (list `(define ,x ,en))))
+        (('if e0 e1 e2) (list `(if ,e0
+                                   (begin ,@(apply append (map do (cdr e1))))
+                                   (begin ,@(apply append (map do (cdr e2)))))))
+
+        (e (list e))))
+
+    (map-lambdas (lambda (e) (apply append (map do e))) exp))
+
+  (define (hoist-take-n+3 exp)
+
+    (define (do exp)
+      (match exp
+        (('define x ('primcall pr x* ...))
+         (let ((out (map (lambda (x) (cons (unique-var 't) x)) x*)))
+           (append (map (lambda (x) `(define ,(car x) ,(cdr x))) out)
+                   (list `(define ,x (primcall ,pr ,@(map car out)))))))
+        (e (list e))))
+
+    (map-lambdas (lambda (e) (apply append (map do e))) exp))
+
+  (define (define+set! exp)
+
+    (define (do exp)
+      (define vars '())
+
+      (define (dodo e)
+        (match e
+          (('define x v)
+           (set! vars (cons x vars))
+           `(set! ,x ,v))
+          (('if e0 e1 e2)
+           `(if ,e0
+                (begin ,@(map dodo (cdr e1)))
+                (begin ,@(map dodo (cdr e2)))))
+          (('let () e* ...) (map dodo e*)
+           `(let () ,@e*))
+          (e e)))
+
+      (define e* (map dodo exp))
+      (define v* (map (lambda (v) `(define ,v)) vars))
+      (cons `(begin ,@v*) e*))
+
+    (map-lambdas do exp))
+
+  (define (deduplicate-closure-continuation exp)
+
+    (define (do exp)
+      (match exp
+        (('values cl cl e* ...)
+         `(values ,cl ,@e*))
+        (e e)))
+
+    (map-lambdas (lambda (e*) (map do e*)) exp))
+
+  (define steps (list hoist-simple-let
+                      simplify-make-closure
+                      simple-values
+                      hoist-take-n+1
+                      hoist-take-n+2
+                      hoist-take-n+3
+                      define+set!
+                      deduplicate-closure-continuation))
+
+  (let loop ((exp exp)
+             (steps steps))
+    (if (null? steps)
+        exp
+        (loop ((car steps) exp) (cdr steps)))))
+
+
+(define mess-step (make-step! "mess"
+                              trampolinize-step
+                              reader
+                              mess
+                              #f))
+
+
+(define (wasmize x)
+  (if (integer? x)
+      `(i32.const ,x)
+      (string->symbol (string-append "$" (symbol->string x)))))
+
+(define (define/type exp)
+
+  ;; same as map-lambdas but pass lambda arguments
+  (define (map-lambdas* proc exp)
+    (let loop ((exp (cdr exp))
+               (out '()))
+      (if (null? exp)
+          `(begin ,@(reverse out))
+          (match (car exp)
+            (('define name ('lambda args e* ...))
+             (loop (cdr exp)
+                   (cons `(define ,name (lambda ,args ,@(proc args e*)))
+                         out)))
+            (('define 'main value)
+             (loop (cdr exp)
+                   (cons `(define main ,value) out)))))))
+
+  (define (every? objs)
+    (let loop ((objs objs))
+      (if (null? objs)
+          #t
+          (if (car objs)
+              (loop (cdr objs))
+              #f))))
+
+  (define (closure-variable? v)
+    (if (not (symbol? v))
+        #f
+        (let ((s (symbol->string v)))
+          (and (char=? (string-ref s 0) #\c)
+               (char=? (string-ref s 1) #\l)
+               (char=? (string-ref s 2) #\.)))))
+
+  (define (func-variable? v)
+    (if (not (symbol? v))
+        #f
+        (let ((s (symbol->string v)))
+          (and (char=? (string-ref s 0) #\a)
+               (char=? (string-ref s 1) #\.)))))
+
+  (define (dodo args v* use)
+    (let loop ((use use)
+               (types (map (lambda (x) (cons x 'externref)) args)))
+      (if (null? use)
+          (if (and (= (+ (length v*) (length args))
+                      (length types))
+                   (every? (map (lambda (x) (assoc x types)) v*)))
+              types
+              (error 'ruse "some variables have not types" v* types))
+          (match (car use)
+            (('set! v (? closure-variable? e)) (loop (cdr use)
+                                                     (cons (cons v 'externref)
+                                                           types)))
+
+            (('set! v (? func-variable? e)) (loop (cdr use)
+                                                  (cons (cons v 'funcref)
+                                                        types)))
+
+            (('set! v (? integer? e)) (loop (cdr use)
+                                            (cons (cons v 'i32)
+                                                  types)))
+
+            (('set! v ('primcall _ ...)) (loop (cdr use)
+                                               (cons (cons v 'externref)
+                                                     types)))
+
+            (('primcall _ ...) (loop (cdr use) types))
+            (('values e* ...) (loop (cdr use) types))
+            (('if e0 (begin e1 ...) (begin e2 ...))
+             (loop (append e1 e2 (cdr use)) types))
+            (else (error 'ruse2wasm "unrecognized expression" (car use)))))))
+
+  (define (do args exp)
+    (match exp
+      ((('begin ('define v0*) ...) e* ... en)
+       (let ((types (dodo args v0* (append e* (list en)))))
+         `((begin ,@(map (lambda (v) `(define ,v ,(cdr (assoc v types)))) v0*))
+           ,@e* ,en)))))
+
+  (map-lambdas* (lambda (args e) (do args e)) exp))
+
+
+(define define/type-step (make-step! "define/type"
+                                     mess-step
+                                     reader
+                                     define/type
+                                     #f))
+
+
+(define (wasmic exp)
+
+  (define (func? v)
+    (if (not (symbol? v))
+        #f
+        (let ((s (symbol->string v)))
+          (and (char=? (string-ref s 0) #\a)
+               (char=? (string-ref s 1) #\.)))))
+
+  (define (make-operation o)
+    (match o
+      (('set! v ('primcall pr s* ...))
+       `(local.set ,(wasmize v)
+                   (call ,(wasmize pr)
+                         ,@(map (lambda (s) `(local.get ,(wasmize s))) s*))))
+
+      (('set! v (? integer? i))
+       `(local.set ,(wasmize v) (i32.const ,i)))
+
+      (('set! v ('primcall 'make-closure (? symbol? s)))
+       `(local.set ,(wasmize v) (call $make-closure (local.get ,(wasmize s)))))
+
+      (('primcall 'closure-push s* ...)
+       `(call $closure-push
+              ,@(map (lambda (s) `(local.get ,(wasmize s))) s*)))
+
+      (('set! (? symbol? l) (? func? r))
+       `(local.set ,(wasmize l) (func.ref ,(wasmize r))))
+
+      (('set! (? symbol? l) (? symbol? r))
+       `(local.set ,(wasmize l) (local.get ,(wasmize r))))
+
+      ))
+
+  (define (dovalues v0 v*)
+    ;; return inside table
+    (append (map (lambda (v i) `(table.set $stack (i32.const ,i)
+                                           ,(if (integer? v)
+                                                `(call $i32tojs (i32.const ,v))
+                                                `(local.get ,(wasmize v)))))
+                 v* (iota (length v*)))
+            ;; push wasm function return value to the stack
+            (list `(local.get ,(wasmize v0)))))
+
+  (define (doend expr)
+    (match expr
+      (('values v0 v* ...) (dovalues v0 v*))
+      (('if e0 (begin e1* ... e1n) (begin e2* ... e2n))
+       (list `(if (result externref) (result externref)
+                  (i32.eqz (call $zerop (local.get ,(wasmize e0))))
+                  (then ,@(map make-operation e1*) ,@(doend e1n))
+                  (else ,@(map make-operation e2*) ,@(doend e2n)))))))
+
+  (define (do exp)
+    (match exp
+      (('define name ('lambda args (begin ('define i* t*) ...) o* ... en))
+       `(func ,(wasmize name)
+              (param ,(wasmize (car args)) externref)
+              (result externref)
+                  ;; delcare local variables with types for arguments
+                  ,@(map (lambda (v) `(local ,(wasmize v) externref)) (cdr args))
+                  ;; declare local variables with types for internal use
+                  ,@(map (lambda (v t) `(local ,(wasmize v) ,t)) i* t*)
+                  ;; set local variables from arguments passed in the
+                  ;; table called $stack.
+                  ,@(map (lambda (v i) `(local.set ,(wasmize v)
+                                                   (table.get $stack (i32.const ,i))))
+                         (cdr args)
+                         (iota (length (cdr args))))
+                  ,@(map make-operation o*)
+                  ,@(doend en)))
+      (('define 'main ('primcall 'make-closure i name))
+       (func $trampoline (export "trampoline")
+             (block
+              (i32.const 0)
+              (loop (param i32)
+                    (call$ $procedures (result i32) (result i32))
+                    (i32.eqz)
+                    (br_if 1)
+       (br 0))))
+
+
+  `(begin ,@(map do (cdr exp))))
+
+(define wasmic-step (make-step! "wasmic"
+                                define/type-step
+                                reader
+                                wasmic
+                                #f))
+
+;; (nanosteps "make-letrec*-explicit" "parse-and-rename" (cadr (command-line)))
+(nanosteps "make-letrec*-explicit" "wasmic" (cadr (command-line)))
 ;;(nanosteps "make-letrec*-explicit" "convert-let-as-lambda" (caddr (command-line)))
