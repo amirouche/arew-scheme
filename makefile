@@ -82,3 +82,9 @@ notes-dev: ## Rebuild notes for local use
 	poetry install
 	poetry run ./make-notes.py make http://localhost:8000
 	python3 -m http.server
+
+ruse/wasm:
+	@./venv scheme --program src/ruse2wasm.scm benchmarks/test.scm
+
+ruse/js:
+	@./venv scheme --program src/ruse2js.scm benchmarks/test.scm
