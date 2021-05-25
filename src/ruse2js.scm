@@ -709,6 +709,7 @@
     (define (do exp)
       (match exp
         (('define x ('let () e* ... en)) (append e* (list `(define ,x ,en))))
+        (('values e e e* ...) (list `(values ,e ,@e*)))
         (('if e0 e1 e2) (list `(if ,e0
                                    (begin ,@(apply append (map do (cdr e1))))
                                    (begin ,@(apply append (map do (cdr e2)))))))
@@ -763,6 +764,44 @@
 
     (map-lambdas (lambda (e*) (map do e*)) exp))
 
+  (define (make-it-runnable exp)
+
+    (define (do exp)
+      (match exp
+        (('define 'main ('primcall 'make-closure ('list) name))
+         (list `(define (quit cl output)
+                  (begin)
+                  (pk 'output: output)
+                  (values))
+
+               `(define (callback cl proc)
+                  (begin
+                    (define clquit))
+                  (set! clquit (primcall make-closure quit))
+                  (values proc clquit))
+
+               `(define (trampoline)
+                  (begin
+                    (define args)
+                    (define clcurrent)
+                    (define clk)
+                    (define proc))
+                  (set! clcurrent (primcall make-closure ,name))
+                  (set! clk (primcall make-closure callback))
+                  (set! args (list clcurrent clk))
+                  (let loop ((args args))
+                    (unless (null? args)
+                      (set! proc (primcall closure-code (car args)))
+                      (call-with-values (lambda () (apply proc args))
+                        (lambda args
+                          (loop args))))))
+
+               `(trampoline)))
+        (e (list e))))
+
+
+    (cons 'begin (apply append (map do (cdr exp)))))
+
   (define steps (list hoist-simple-let
                       simplify-make-closure
                       simple-values
@@ -770,7 +809,8 @@
                       hoist-take-n+2
                       hoist-take-n+3
                       define+set!
-                      deduplicate-closure-continuation))
+                      deduplicate-closure-continuation
+                      make-it-runnable))
 
   (let loop ((exp exp)
              (steps steps))
@@ -779,14 +819,46 @@
         (loop ((car steps) exp) (cdr steps)))))
 
 
+(define (mess-evaler exp)
+  (define exp* `(begin
+                  (define (pk . args) (write ";;; ") (write args) (newline) (car (reverse args)))
+                  (define void (lambda () (when #f #f)))
+                  (define (make-box v) (vector v))
+                  (define (unbox b) (vector-ref b 0))
+                  (define (box! b a) (vector-set! b 0 a))
+                  (define (time) (inexact (/ (current-jiffy) (jiffies-per-second))))
+                  (define (print . args)
+                    (write args)(newline))
+                  (define (primcall proc . args) (apply proc args))
+                  (define (make-closure p) (vector p '()))
+                  (define (closure-push p v) (vector-set! p 1 (append (vector-ref p 1) (list v))))
+                  (define (closure-ref p i) (list-ref (vector-ref p 1) i))
+                  (define (closure-code p) (vector-ref p 0))
+
+                  (define (zero? x)
+                    (= x 0))
+
+                  (define (add a b)
+                    (+ a b))
+
+                  (define (sub a b)
+                    (- a b))
+
+                  ,exp))
+
+  (define env (environment '(scheme base) '(scheme write) '(scheme time)))
+  (pretty-print exp*)
+
+  (let loop ((exp* (cdr exp*)))
+    (unless (null? exp*)
+      (eval (car exp*) env)
+      (loop (cdr exp*)))))
+
 (define mess-step (make-step! "mess"
                               trampolinize-step
                               reader
                               mess
-                              #f))
+                              mess-evaler))
 
-
-
-(define step-javascripter (make-step! "javascripter" mess-step #f javascripter display))
 
 (nanosteps "make-letrec*-explicit" "mess" (cadr (command-line)))

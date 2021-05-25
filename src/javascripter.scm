@@ -94,3 +94,5 @@
       (display string stdin)
       (close-port stdin)
       (string-append (read-string stdout) (read-string stderr)))))
+
+(define step-javascripter (make-step! "javascripter" mess-step #f javascripter display))
