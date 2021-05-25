@@ -821,7 +821,7 @@
 
 (define (mess-evaler exp)
   (define exp* `(begin
-                  (define (pk . args) (write ";;; ") (write args) (newline) (car (reverse args)))
+                  (define (pk . args) (display ";;; ") (write args) (newline) (car (reverse args)))
                   (define void (lambda () (when #f #f)))
                   (define (make-box v) (vector v))
                   (define (unbox b) (vector-ref b 0))
