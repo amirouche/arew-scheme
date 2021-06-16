@@ -6,6 +6,7 @@
 (import (scheme cxr))
 (import (scheme write))
 
+
 (define (html-char char)
   (case char
     ((#\") "&quot;")
@@ -30,7 +31,7 @@
       param
       source
       track
-      wbr)
+      br)
      (if (and (not (null? (cdr sexp))) (pair? (cadr sexp)) (eq? (caadr sexp) '*))
          (begin
            (write-string (string-append "<" (symbol->string (car sexp))) port)
@@ -72,7 +73,7 @@
    (else (error "object not supported" sexp))))
 
 (define (%html-write sexp port)
-  (write-string "<!DOCTYPE html>")
+  (write-string "<!DOCTYPE html>" port)
   (%%html-write sexp port))
 
 (define html-write
