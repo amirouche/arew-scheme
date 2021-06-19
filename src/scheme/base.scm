@@ -5,6 +5,7 @@
 ;;
 (library (scheme base)
   (export
+   import
    compose const and=> sort _ pk
    ... => else
    * + - / < <= = > >= abs and append apply assoc assq assv begin
@@ -52,7 +53,8 @@
           (scheme write)
           (only (chezscheme)
                 include sort port-closed? foreign-procedure
-                input-port-ready? define-values char-ready?)
+                input-port-ready? define-values char-ready?
+                import)
           (except (rnrs) case syntax-rules error define-record-type
                   string->list string-copy string->utf8 vector->list
                   vector-fill! bytevector-copy! bytevector-copy
